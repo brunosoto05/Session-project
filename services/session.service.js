@@ -1,9 +1,10 @@
-const bcrypt = require('bcrypt');
-const pool = require('../config/db');
+import bcrypt from 'bcrypt';
+import pool from '../config/db.js';
 
-// authenticate: valida username/password contra la BD
-async function authenticate(username, password) {
-  const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+// validate: valida username/password contra la BD.
+// Si son correctos devuelve el usuario con su lista de perfiles, si no devuelve null
+export async function validate(username, password) {
+  const result = await pool.query('SELECT * FROM "user" WHERE username = $1', [username]);
   const usuario = result.rows[0];
 
   if (!usuario) return null;
@@ -11,34 +12,45 @@ async function authenticate(username, password) {
   const passwordCorrecta = await bcrypt.compare(password, usuario.password_hash);
   if (!passwordCorrecta) return null;
 
-  return usuario;
+  const perfiles = await pool.query(
+    `SELECT p.name
+     FROM profile p
+     JOIN user_profile up ON up.profile_id = p.id
+     WHERE up.user_id = $1
+     ORDER BY p.name`,
+    [usuario.id]
+  );
+
+  return {
+    id: usuario.id,
+    username: usuario.username,
+    profile: perfiles.rows.map((fila) => fila.name),
+  };
 }
 
-// sessionExists: revisa si el request ya tiene una sesion activa
-function sessionExists(req) {
-  return !!(req.session && req.session.userId);
+// sessionExist: revisa si el request ya tiene una sesion activa
+export function sessionExist(req) {
+  return !!(req.session && req.session.userID);
 }
 
 // createSession: crea el session object dentro de req.session
-function createSession(req, usuario) {
-  req.session.userId = usuario.id;
+export function createSession(req, usuario) {
+  req.session.userID = usuario.id;
   req.session.userName = usuario.username;
-  req.session.role = usuario.role;
+  req.session.profile = usuario.profile;
 }
 
 // getSession: devuelve los datos guardados en la sesion actual
-function getSession(req) {
-  if (!sessionExists(req)) return null;
+export function getSession(req) {
+  if (!sessionExist(req)) return null;
   return {
-    userId: req.session.userId,
+    userID: req.session.userID,
     userName: req.session.userName,
-    role: req.session.role,
+    profile: req.session.profile,
   };
 }
 
 // closeSession: destruye la sesion activa
-function closeSession(req, callback) {
+export function closeSession(req, callback) {
   req.session.destroy(callback);
 }
-
-module.exports = { authenticate, sessionExists, createSession, getSession, closeSession };

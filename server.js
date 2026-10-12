@@ -1,12 +1,12 @@
-require('dotenv').config();
-const express = require('express');
-const session = require('express-session');
-const pgSession = require('connect-pg-simple')(session);
-const pool = require('./config/db');
+import 'dotenv/config';
+import express from 'express';
+import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
+import pool from './config/db.js';
+import authRoutes from './routes/auth.routes.js';
+import protectedRoutes from './routes/protected.routes.js';
 
-const authRoutes = require('./routes/auth.routes');
-const protectedRoutes = require('./routes/protected.routes');
-
+const pgSession = connectPgSimple(session);
 const app = express();
 
 app.use(express.json());
@@ -31,6 +31,7 @@ app.use(
   })
 );
 
+// El server es el dispatcher: todo entra por aqui y se reparte a cada grupo de rutas
 app.use('/auth', authRoutes);
 app.use('/api', protectedRoutes);
 

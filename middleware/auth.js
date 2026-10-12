@@ -1,18 +1,16 @@
-const { sessionExists } = require('../services/session.service');
+import { sessionExist } from '../services/session.service.js';
 
-// Usa sessionExists del session.service para verificar la sesion
-function isAuthenticated(req, res, next) {
-  if (sessionExists(req)) {
+// Usa sessionExist del session.service para verificar la sesion
+export function isAuthenticated(req, res, next) {
+  if (sessionExist(req)) {
     return next();
   }
   return res.status(401).json({ error: 'No autenticado. Debes iniciar sesion.' });
 }
 
-function isAdmin(req, res, next) {
-  if (req.session && req.session.role === 'admin') {
+export function isAdmin(req, res, next) {
+  if (sessionExist(req) && req.session.profile.includes('admin')) {
     return next();
   }
-  return res.status(403).json({ error: 'Acceso denegado. Se requiere rol de administrador.' });
+  return res.status(403).json({ error: 'Acceso denegado. Se requiere perfil de administrador.' });
 }
-
-module.exports = { isAuthenticated, isAdmin };

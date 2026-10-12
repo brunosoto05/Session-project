@@ -1,6 +1,6 @@
-const express = require('express');
-const { isAuthenticated, isAdmin } = require('../middleware/auth');
-const { getSession } = require('../services/session.service');
+import express from 'express';
+import { isAuthenticated, isAdmin } from '../middleware/auth.js';
+import { getSession } from '../services/session.service.js';
 
 const router = express.Router();
 
@@ -12,11 +12,11 @@ router.get('/profile', isAuthenticated, (req, res) => {
   });
 });
 
-// GET /api/admin - requiere sesion activa y rol admin
+// GET /api/admin - requiere sesion activa y perfil admin
 router.get('/admin', isAuthenticated, isAdmin, (req, res) => {
   res.json({
     message: `Bienvenido al panel de administrador, ${req.session.userName}`,
   });
 });
 
-module.exports = router;
+export default router;

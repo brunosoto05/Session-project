@@ -1,8 +1,8 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+import 'dotenv/config';
+import pg from 'pg';
 
 // Pool de conexiones reutilizables a PostgreSQL
-const pool = new Pool({
+const pool = new pg.Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
   database: process.env.DB_NAME,
@@ -18,4 +18,4 @@ pool.on('error', (err) => {
   console.error('Error inesperado en el pool de PostgreSQL', err);
 });
 
-module.exports = pool;
+export default pool;
