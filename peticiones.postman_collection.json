@@ -109,7 +109,7 @@
     {
       "name": "5. Login usuario no existe (404)",
       "request": {
-        "method": "GET",
+        "method": "POST",
         "header": [
           {
             "key": "Content-Type",
@@ -142,7 +142,7 @@
     {
       "name": "6. Login juan (sesion creada, repetir = ya tiene sesion)",
       "request": {
-        "method": "GET",
+        "method": "POST",
         "header": [
           {
             "key": "Content-Type",
@@ -232,7 +232,7 @@
     {
       "name": "10. Login admin1",
       "request": {
-        "method": "GET",
+        "method": "POST",
         "header": [
           {
             "key": "Content-Type",

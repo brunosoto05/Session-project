@@ -84,14 +84,14 @@ Body (JSON):
 
 ### c) Login
 ```
-GET http://localhost:3000/auth/login
+POST http://localhost:3000/auth/login
 Body (JSON):
 {
   "username": "juan",
   "password": "1234abcd"
 }
 ```
-El login es un GET que recibe el usuario y la clave en el body como JSON
+El login es un POST que recibe el usuario y la clave en el body como JSON
 (en Postman: pestana Body, opcion raw, tipo JSON).
 
 Sigue el proceso de sesion visto en clase: primero revisa si el request ya

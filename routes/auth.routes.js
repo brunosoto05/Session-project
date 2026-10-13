@@ -67,13 +67,13 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// GET /auth/login (username y password van en el body como JSON)
+// POST /auth/login (username y password van en el body como JSON)
 // Proceso de sesion: Login -> revisa si tiene sesion
 //   si tiene -> regresa (ya tiene sesion)
 //   si no -> autentica
 //     si autentica OK -> crea sesion -> "sesion creada ok"
 //     si no -> "usuario no existe"
-router.get('/login', async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     if (sessionExist(req)) {
       return res.json({ message: 'Ya tiene sesion', session: getSession(req) });
