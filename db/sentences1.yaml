@@ -1,0 +1,125 @@
+# Sentencias SQL del sistema. Se ejecutan por nombre con db.exe("nombre", [parametros])
+# Los parametros se mapean en orden con $1, $2, $3...
+
+# --- Sesion ---
+
+getUser: |
+  SELECT id, username, password_hash
+  FROM "user"
+  WHERE username = $1 AND active
+
+getUserProfiles: |
+  SELECT p.id, p.name
+  FROM profile p
+  JOIN user_profile up ON up.profile_id = p.id
+  WHERE up.user_id = $1
+  ORDER BY p.name
+
+getProfilesByName: |
+  SELECT id, name FROM profile WHERE name = ANY($1)
+
+# Crea la persona, su usuario y le asigna los perfiles en una sola sentencia,
+# asi no queda una persona sin usuario si algo falla
+registerUser: |
+  WITH new_person AS (
+    INSERT INTO person (document, first_name, last_name)
+    VALUES ($1, $2, $3)
+    RETURNING id
+  ), new_user AS (
+    INSERT INTO "user" (person_id, username, email, password_hash)
+    SELECT id, $4, $5, $6 FROM new_person
+    RETURNING id, username
+  ), new_profiles AS (
+    INSERT INTO user_profile (user_id, profile_id)
+    SELECT new_user.id, profile.id
+    FROM new_user, profile
+    WHERE profile.name = ANY($7)
+  )
+  SELECT id, username FROM new_user
+
+# --- Seguridad: lo que llena los mapas del objeto de seguridad ---
+
+getPermission: |
+  SELECT s.description AS subsystem, c.description AS class,
+         m.description AS method, pm.profile_id, pm.value
+  FROM method m
+  INNER JOIN class c ON c.id = m.class_id
+  INNER JOIN subsystem s ON s.id = c.subsystem_id
+  INNER JOIN permission_method pm ON pm.method_id = m.id
+
+getPermissionOption: |
+  SELECT s.description AS subsystem, o.description AS option,
+         po.profile_id, po.value
+  FROM option o
+  INNER JOIN subsystem s ON s.id = o.subsystem_id
+  INNER JOIN permission_option po ON po.option_id = o.id
+
+getTransactions: |
+  SELECT m.tx, s.description AS subsystem, c.description AS class,
+         m.description AS method
+  FROM method m
+  INNER JOIN class c ON c.id = m.class_id
+  INNER JOIN subsystem s ON s.id = c.subsystem_id
+
+# --- Mantenimiento de seguridad ---
+
+setActiveUser: |
+  UPDATE "user" SET active = $2
+  WHERE id = $1
+  RETURNING id, username, active
+
+addUserProfile: |
+  INSERT INTO user_profile (user_id, profile_id)
+  VALUES ($1, $2)
+  ON CONFLICT DO NOTHING
+  RETURNING user_id, profile_id
+
+createProfile: |
+  INSERT INTO profile (name) VALUES ($1)
+  RETURNING id, name
+
+grantMethod: |
+  INSERT INTO permission_method (profile_id, method_id, value)
+  VALUES ($1, $2, $3)
+  ON CONFLICT (profile_id, method_id) DO UPDATE SET value = EXCLUDED.value
+  RETURNING profile_id, method_id, value
+
+grantOption: |
+  INSERT INTO permission_option (profile_id, option_id, value)
+  VALUES ($1, $2, $3)
+  ON CONFLICT (profile_id, option_id) DO UPDATE SET value = EXCLUDED.value
+  RETURNING profile_id, option_id, value
+
+createSubsystem: |
+  INSERT INTO subsystem (description) VALUES ($1)
+  RETURNING id, description
+
+createOption: |
+  INSERT INTO option (subsystem_id, description) VALUES ($1, $2)
+  RETURNING id, subsystem_id, description
+
+deleteOption: |
+  WITH removed AS (
+    DELETE FROM permission_option WHERE option_id = $1
+  )
+  DELETE FROM option WHERE id = $1
+  RETURNING id, description
+
+createClass: |
+  INSERT INTO class (subsystem_id, description) VALUES ($1, $2)
+  RETURNING id, subsystem_id, description
+
+deleteClass: |
+  DELETE FROM class WHERE id = $1
+  RETURNING id, description
+
+createMethod: |
+  INSERT INTO method (class_id, description, tx) VALUES ($1, $2, $3)
+  RETURNING id, class_id, description, tx
+
+deleteMethod: |
+  WITH removed AS (
+    DELETE FROM permission_method WHERE method_id = $1
+  )
+  DELETE FROM method WHERE id = $1
+  RETURNING id, description, tx

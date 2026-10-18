@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Session-project",
-    "description": "Peticiones para probar el manejo de sesion. Correrlas en orden.",
+    "description": "Peticiones para probar la sesion y el modulo de seguridad. Correrlas en orden.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -22,26 +22,7 @@
       }
     },
     {
-      "name": "2. Perfil sin sesion (401)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:3000/api/profile",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "3000",
-          "path": [
-            "api",
-            "profile"
-          ]
-        }
-      }
-    },
-    {
-      "name": "3. Registrar usuario normal",
+      "name": "2. toProcess sin sesion (401)",
       "request": {
         "method": "POST",
         "header": [
@@ -51,20 +32,19 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:3000/auth/register",
+          "raw": "http://localhost:3000/toProcess",
           "protocol": "http",
           "host": [
             "localhost"
           ],
           "port": "3000",
           "path": [
-            "auth",
-            "register"
+            "toProcess"
           ]
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Perez\",\n  \"username\": \"juan\",\n  \"password\": \"1234abcd\"\n}",
+          "raw": "{\n  \"tx\": 4,\n  \"params\": [\n    \"analista\"\n  ]\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -74,40 +54,7 @@
       }
     },
     {
-      "name": "4. Registrar admin",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": {
-          "raw": "http://localhost:3000/auth/register",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "3000",
-          "path": [
-            "auth",
-            "register"
-          ]
-        },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Gomez\",\n  \"username\": \"admin1\",\n  \"password\": \"admin123\",\n  \"profile\": [\n    \"admin\",\n    \"user\"\n  ]\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        }
-      }
-    },
-    {
-      "name": "5. Login usuario no existe (404)",
+      "name": "3. Login usuario no existe (404)",
       "request": {
         "method": "POST",
         "header": [
@@ -140,7 +87,335 @@
       }
     },
     {
-      "name": "6. Login juan (sesion creada, repetir = ya tiene sesion)",
+      "name": "4. Login admin (sesion creada, repetir = ya tiene sesion)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "5. Ver sesion",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/profile",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "profile"
+          ]
+        }
+      }
+    },
+    {
+      "name": "6. toProcess transaccion no existe (404)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/toProcess",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "toProcess"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tx\": 999,\n  \"params\": []\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "7. Crear perfil (tx 4)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/toProcess",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "toProcess"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tx\": 4,\n  \"params\": [\n    \"analista\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "8. Crear usuario (tx 1)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/toProcess",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "toProcess"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tx\": 1,\n  \"params\": [\n    \"12345678\",\n    \"Maria\",\n    \"Lopez\",\n    \"maria\",\n    \"maria@correo.com\",\n    \"clave123\",\n    [\n      \"analista\"\n    ]\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "9. Crear subsistema (tx 7)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/toProcess",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "toProcess"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tx\": 7,\n  \"params\": [\n    \"payroll\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "10. Crear opcion (tx 8)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/toProcess",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "toProcess"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tx\": 8,\n  \"params\": [\n    1,\n    \"Usuarios\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "11. Dar permiso de opcion (tx 6)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/toProcess",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "toProcess"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tx\": 6,\n  \"params\": [\n    1,\n    1,\n    true\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "12. Desactivar usuario (tx 2)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/toProcess",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "toProcess"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tx\": 2,\n  \"params\": [\n    2,\n    false\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "13. Registro",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/auth/register",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document\": \"87654321\",\n  \"first_name\": \"Juan\",\n  \"last_name\": \"Perez\",\n  \"username\": \"juan\",\n  \"email\": \"juan@correo.com\",\n  \"password\": \"1234abcd\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "14. Logout",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/auth/logout",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "auth",
+            "logout"
+          ]
+        }
+      }
+    },
+    {
+      "name": "15. Login juan (perfil user)",
       "request": {
         "method": "POST",
         "header": [
@@ -173,64 +448,7 @@
       }
     },
     {
-      "name": "7. Perfil con sesion (200)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:3000/api/profile",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "3000",
-          "path": [
-            "api",
-            "profile"
-          ]
-        }
-      }
-    },
-    {
-      "name": "8. Panel admin (403 con juan, 200 con admin1)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:3000/api/admin",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "3000",
-          "path": [
-            "api",
-            "admin"
-          ]
-        }
-      }
-    },
-    {
-      "name": "9. Logout",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:3000/auth/logout",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "3000",
-          "path": [
-            "auth",
-            "logout"
-          ]
-        }
-      }
-    },
-    {
-      "name": "10. Login admin1",
+      "name": "16. toProcess sin permiso (403)",
       "request": {
         "method": "POST",
         "header": [
@@ -240,20 +458,19 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:3000/auth/login",
+          "raw": "http://localhost:3000/toProcess",
           "protocol": "http",
           "host": [
             "localhost"
           ],
           "port": "3000",
           "path": [
-            "auth",
-            "login"
+            "toProcess"
           ]
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"username\": \"admin1\",\n  \"password\": \"admin123\"\n}",
+          "raw": "{\n  \"tx\": 4,\n  \"params\": [\n    \"otro\"\n  ]\n}",
           "options": {
             "raw": {
               "language": "json"

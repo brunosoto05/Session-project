@@ -1,7 +1,21 @@
-# Proyecto de Sesiones - Express + PostgreSQL
+# Proyecto de Sesiones y Seguridad - Express + PostgreSQL
 
-Manejo de sesion con Express y express-session. Las tablas para el login son
-`persona -> user -> user_profile <- profile`.
+Manejo de sesion con Express y express-session, y modulo de seguridad:
+permisos por metodo y por opcion segun el perfil, cache de permisos en memoria
+y un solo endpoint (`POST /toProcess`) que ejecuta los metodos de negocio.
+
+## Estructura
+
+```
+server.js                    dispatcher: sesion, /auth, /api y /toProcess
+config/db.js                 pool de PostgreSQL
+db/DBComponent.js            objeto de base de datos: db.exe("sentencia", [params])
+db/sentences1.yaml           todas las sentencias SQL por nombre
+services/session.service.js  validate, createSession, sessionExist, getSession, closeSession
+security/Security.js         objeto de seguridad (mapas de permisos y transacciones)
+subsystems/security/         clases del subsistema de seguridad (mantenimiento)
+sql/init.sql                 tablas y datos iniciales
+```
 
 ## 1. Instalar dependencias
 
@@ -17,18 +31,27 @@ Crear la base de datos en PostgreSQL:
 psql -U postgres -c "CREATE DATABASE session_project;"
 ```
 
-Crear las tablas corriendo el script:
+Si ya existia de la version anterior (con la tabla `persona`), hay que borrarla
+primero, porque el modelo cambio:
+
+```bash
+psql -U postgres -c "DROP DATABASE session_project WITH (FORCE);"
+```
+
+Crear las tablas y los datos iniciales corriendo el script:
 
 ```bash
 psql -U postgres -d session_project -f sql/init.sql
 ```
 
-El script crea `persona`, `user`, `profile` y `user_profile`, y deja cargados
-los perfiles `admin` y `user`.
+Tablas: `person`, `user`, `profile`, `user_profile`, `subsystem`, `option`,
+`class`, `method`, `permission_method` y `permission_option`.
 
-La tabla `session` (donde se guardan las sesiones activas) se crea sola
-automaticamente la primera vez que arranca el servidor, no hace falta
-crearla a mano.
+Datos iniciales: el subsistema `security` con sus clases y metodos, el perfil
+`admin` con permiso sobre todos ellos y el usuario `admin` (clave `admin123`).
+Lo demas se crea desde el mantenimiento de seguridad.
+
+La tabla `session` se crea sola la primera vez que arranca el servidor.
 
 ## 3. Configurar variables de entorno
 
@@ -50,84 +73,98 @@ PORT=3000
 pnpm start
 ```
 
-Deberia aparecer: `Servidor corriendo en http://localhost:3000`
+Al arrancar, el objeto de seguridad carga los permisos y las transacciones en
+memoria. Deberia aparecer: `Servidor corriendo en http://localhost:3000`
 
-## 5. Probar con Postman
+## 5. Sesion
 
-Postman guarda la cookie de sesion solo, asi que las peticiones se hacen en
-orden desde la misma ventana.
-
-### a) Registrar un usuario normal
-```
-POST http://localhost:3000/auth/register
-Body (JSON):
-{
-  "nombre": "Juan",
-  "apellido": "Perez",
-  "username": "juan",
-  "password": "1234abcd"
-}
-```
-
-### b) Registrar un admin
-```
-POST http://localhost:3000/auth/register
-Body (JSON):
-{
-  "nombre": "Ana",
-  "apellido": "Gomez",
-  "username": "admin1",
-  "password": "admin123",
-  "profile": ["admin", "user"]
-}
-```
-
-### c) Login
+### Login
 ```
 POST http://localhost:3000/auth/login
 Body (JSON):
 {
-  "username": "juan",
-  "password": "1234abcd"
+  "username": "admin",
+  "password": "admin123"
 }
 ```
-El login es un POST que recibe el usuario y la clave en el body como JSON
-(en Postman: pestana Body, opcion raw, tipo JSON).
 
-Sigue el proceso de sesion visto en clase: primero revisa si el request ya
-tiene una sesion activa (sessionExist). Si ya tiene, responde "Ya tiene
-sesion" sin volver a autenticar. Si no tiene, valida contra la BD (validate):
-si el usuario no existe o la password es incorrecta, responde 404
-"Usuario no existe"; si es correcta, crea la sesion (createSession) y
-responde "Sesion creada ok".
+Proceso: si ya tiene sesion responde "Ya tiene sesion"; si no, valida contra la
+BD. Si el usuario no existe, esta inactivo o la clave es incorrecta responde 404
+"Usuario no existe"; si es correcta crea la sesion y responde "Sesion creada ok".
 
-El session object guarda `userID`, `userName` y `profile` (la lista de
-perfiles del usuario).
+El session object queda en `req.session.userData` con `userID`, `userName` y
+`profile` (el id del perfil con el que entra).
 
-### d) Acceder al perfil (requiere estar logueado)
+### Ver la sesion
 ```
 GET http://localhost:3000/api/profile
 ```
 
-### e) Acceder al panel admin
-```
-GET http://localhost:3000/api/admin
-```
-Con "juan" (perfil user) debe devolver 403.
-Con "admin1" (perfil admin) debe devolver 200.
-
-### f) Logout
+### Logout
 ```
 POST http://localhost:3000/auth/logout
 ```
 
-## 6. Verificar sesiones en PostgreSQL
+### Registro
+```
+POST http://localhost:3000/auth/register
+Body (JSON):
+{
+  "document": "12345678",
+  "first_name": "Juan",
+  "last_name": "Perez",
+  "username": "juan",
+  "email": "juan@correo.com",
+  "password": "1234abcd"
+}
+```
+
+## 6. Ejecutar metodos: POST /toProcess
+
+El cliente no manda el nombre de la clase ni del metodo, solo el numero de
+transaccion y los parametros:
+
+```
+POST http://localhost:3000/toProcess
+Body (JSON):
+{
+  "tx": 4,
+  "params": ["analista"]
+}
+```
+
+El servidor revisa en orden: tiene sesion (401 si no), existe la transaccion
+(404 si no), tiene permiso el perfil (403 si no). Si todo esta bien ejecuta el
+metodo y devuelve su respuesta.
+
+Transacciones del subsistema de seguridad:
+
+| tx | Clase | Metodo | params |
+|----|-------|--------|--------|
+| 1 | User | create | `[document, first_name, last_name, username, email, password, [perfiles]]` |
+| 2 | User | setActive | `[userId, true/false]` |
+| 3 | User | addProfile | `[userId, profileId]` |
+| 4 | Profile | create | `[name]` |
+| 5 | Permission | grantMethod | `[profileId, methodId, true/false]` |
+| 6 | Permission | grantOption | `[profileId, optionId, true/false]` |
+| 7 | Subsystem | create | `[description]` |
+| 8 | Option | create | `[subsystemId, description]` |
+| 9 | Option | delete | `[optionId]` |
+| 10 | Class | create | `[subsystemId, description]` |
+| 11 | Class | delete | `[classId]` |
+| 12 | Method | create | `[classId, description, tx]` |
+| 13 | Method | delete | `[methodId]` |
+
+Los permisos y transacciones nuevos se cargan en memoria al reiniciar el
+servidor.
+
+## 7. Coleccion de Postman
+
+El archivo `peticiones.postman_collection.json` trae las peticiones de prueba.
+En Postman: Import, elegir el archivo y correrlas en orden.
+
+## 8. Verificar sesiones en PostgreSQL
 
 ```bash
 psql -U postgres -d session_project -c "SELECT * FROM session;"
 ```
-
-## 7. Coleccion de Postman
-
-El archivo `peticiones.postman_collection.json` trae todas las peticiones de
-prueba ya armadas. En Postman: Import, elegir el archivo y correrlas en orden.

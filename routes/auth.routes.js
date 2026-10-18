@@ -1,69 +1,52 @@
 import express from 'express';
 import bcrypt from 'bcrypt';
-import pool from '../config/db.js';
+import db from '../db/DBComponent.js';
 import { validate, sessionExist, createSession, getSession, closeSession } from '../services/session.service.js';
 
 const router = express.Router();
 const SALT_ROUNDS = 10;
 
 // POST /auth/register
-// Crea la persona, su usuario y le asigna los perfiles.
-// Va en una transaccion para que no quede una persona sin usuario si algo falla.
+// Crea la persona, su usuario y le asigna los perfiles (todo en una sola sentencia)
 router.post('/register', async (req, res) => {
-  const { nombre, apellido, username, password, profile } = req.body ?? {};
+  const { document, first_name, last_name, username, email, password, profile } = req.body ?? {};
 
-  if (!nombre || !apellido || !username || !password) {
-    return res.status(400).json({ error: 'nombre, apellido, username y password son requeridos' });
+  if (!document || !first_name || !last_name || !username || !email || !password) {
+    return res
+      .status(400)
+      .json({ error: 'document, first_name, last_name, username, email y password son requeridos' });
   }
 
   // profile puede venir como texto o como lista. Si no viene, queda como "user"
-  const perfiles = profile ? [].concat(profile) : ['user'];
+  const perfiles = profile ? [...new Set([].concat(profile))] : ['user'];
 
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-
-    const perfilesBD = await client.query('SELECT id, name FROM profile WHERE name = ANY($1)', [perfiles]);
-    if (perfilesBD.rowCount !== new Set(perfiles).size) {
-      await client.query('ROLLBACK');
+    const perfilesBD = await db.exe('getProfilesByName', [perfiles]);
+    if (perfilesBD.length !== perfiles.length) {
       return res.status(400).json({ error: 'Alguno de los perfiles no existe' });
     }
 
-    const persona = await client.query(
-      'INSERT INTO persona (nombre, apellido) VALUES ($1, $2) RETURNING id',
-      [nombre, apellido]
-    );
-
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-    const usuario = await client.query(
-      `INSERT INTO "user" (persona_id, username, password_hash)
-       VALUES ($1, $2, $3)
-       RETURNING id, username`,
-      [persona.rows[0].id, username, passwordHash]
-    );
-
-    for (const perfil of perfilesBD.rows) {
-      await client.query('INSERT INTO user_profile (user_id, profile_id) VALUES ($1, $2)', [
-        usuario.rows[0].id,
-        perfil.id,
-      ]);
-    }
-
-    await client.query('COMMIT');
+    const [usuario] = await db.exe('registerUser', [
+      document,
+      first_name,
+      last_name,
+      username,
+      email,
+      passwordHash,
+      perfiles,
+    ]);
 
     res.status(201).json({
       message: 'Usuario creado',
-      user: { ...usuario.rows[0], profile: perfilesBD.rows.map((p) => p.name) },
+      user: { ...usuario, profile: perfilesBD.map((p) => p.name) },
     });
   } catch (err) {
-    await client.query('ROLLBACK');
     if (err.code === '23505') {
-      return res.status(409).json({ error: 'Ese username ya existe' });
+      return res.status(409).json({ error: 'Ese documento o username ya existe' });
     }
     console.error(err);
     res.status(500).json({ error: 'Error interno del servidor' });
-  } finally {
-    client.release();
   }
 });
 
@@ -91,7 +74,12 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ error: 'Usuario no existe' });
     }
 
-    createSession(req, usuario);
+    if (usuario.profiles.length !== 1) {
+      // por terminar: elegir el perfil cuando el usuario tiene varios
+      return res.status(400).json({ error: 'El usuario debe tener un perfil para entrar' });
+    }
+
+    createSession(req, usuario, usuario.profiles[0].id);
 
     res.json({ message: 'Sesion creada ok', session: getSession(req) });
   } catch (err) {
