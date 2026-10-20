@@ -15,9 +15,6 @@ getUserProfiles: |
   WHERE up.user_id = $1
   ORDER BY p.name
 
-getProfilesByName: |
-  SELECT id, name FROM profile WHERE name = ANY($1)
-
 # Crea la persona, su usuario y le asigna los perfiles en una sola sentencia,
 # asi no queda una persona sin usuario si algo falla
 registerUser: |
@@ -78,15 +75,24 @@ createProfile: |
   INSERT INTO profile (name) VALUES ($1)
   RETURNING id, name
 
-grantMethod: |
+# Los usa el objeto de seguridad en setPermissionMethod / setPermissionOption.
+# Reciben las partes del key: subsistema, clase, metodo (u opcion), perfil y el value
+setPermissionMethod: |
   INSERT INTO permission_method (profile_id, method_id, value)
-  VALUES ($1, $2, $3)
+  SELECT $4, m.id, $5
+  FROM method m
+  JOIN class c ON c.id = m.class_id
+  JOIN subsystem s ON s.id = c.subsystem_id
+  WHERE s.description = $1 AND c.description = $2 AND m.description = $3
   ON CONFLICT (profile_id, method_id) DO UPDATE SET value = EXCLUDED.value
   RETURNING profile_id, method_id, value
 
-grantOption: |
+setPermissionOption: |
   INSERT INTO permission_option (profile_id, option_id, value)
-  VALUES ($1, $2, $3)
+  SELECT $3, o.id, $4
+  FROM option o
+  JOIN subsystem s ON s.id = o.subsystem_id
+  WHERE s.description = $1 AND o.description = $2
   ON CONFLICT (profile_id, option_id) DO UPDATE SET value = EXCLUDED.value
   RETURNING profile_id, option_id, value
 

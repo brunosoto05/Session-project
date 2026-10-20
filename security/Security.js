@@ -36,14 +36,34 @@ import db from '../db/DBComponent.js';
     return this.permissionOptionMap.get(key) === true;
   }
 
-  setPermissionMethod(key, value) {
+  // Cambia el permiso en la base de datos y en el mapa, asi tiene efecto sin reiniciar.
+  // key = subsystem_class_method_profile
+  async setPermissionMethod(key, value) {
+    const partes = key.split('_');
+    const profileId = Number(partes.pop());
+    const method = partes.pop();
+    const clase = partes.pop();
+    const subsystem = partes.join('_');
+
+    const [permiso] = await db.exe('setPermissionMethod', [subsystem, clase, method, profileId, value]);
+    if (!permiso) return null;
+
     this.permissionMethodMap.set(key, value);
-    // investigar para desarrollar
+    return permiso;
   }
 
-  setPermissionOption(key, value) {
+  // key = subsystem_option_profile
+  async setPermissionOption(key, value) {
+    const partes = key.split('_');
+    const profileId = Number(partes.pop());
+    const option = partes.pop();
+    const subsystem = partes.join('_');
+
+    const [permiso] = await db.exe('setPermissionOption', [subsystem, option, profileId, value]);
+    if (!permiso) return null;
+
     this.permissionOptionMap.set(key, value);
-    // investigar para desarrollar
+    return permiso;
   }
 
   async executeMethod(jsonData) {
