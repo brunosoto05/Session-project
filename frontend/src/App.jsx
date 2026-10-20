@@ -12,7 +12,7 @@ function App() {
       
     })
     const data = await response.json();
-    setMensaje(data.mensaje || data.error);
+    setMensaje(data.message || data.error);
   }
 
   const [username, setUsername] = useState('');
