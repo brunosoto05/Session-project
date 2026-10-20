@@ -1,54 +1,8 @@
 import express from 'express';
-import bcrypt from 'bcrypt';
 import db from '../db/DBComponent.js';
 import { validate, sessionExist, createSession, getSession, closeSession } from '../services/session.service.js';
 
 const router = express.Router();
-const SALT_ROUNDS = 10;
-
-// POST /auth/register
-// Crea la persona, su usuario y le asigna los perfiles (todo en una sola sentencia)
-router.post('/register', async (req, res) => {
-  const { document, first_name, last_name, username, email, password, profile } = req.body ?? {};
-
-  if (!document || !first_name || !last_name || !username || !email || !password) {
-    return res
-      .status(400)
-      .json({ error: 'document, first_name, last_name, username, email y password son requeridos' });
-  }
-
-  // profile puede venir como texto o como lista. Si no viene, queda como "user"
-  const perfiles = profile ? [...new Set([].concat(profile))] : ['user'];
-
-  try {
-    const perfilesBD = await db.exe('getProfilesByName', [perfiles]);
-    if (perfilesBD.length !== perfiles.length) {
-      return res.status(400).json({ error: 'Alguno de los perfiles no existe' });
-    }
-
-    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-    const [usuario] = await db.exe('registerUser', [
-      document,
-      first_name,
-      last_name,
-      username,
-      email,
-      passwordHash,
-      perfiles,
-    ]);
-
-    res.status(201).json({
-      message: 'Usuario creado',
-      user: { ...usuario, profile: perfilesBD.map((p) => p.name) },
-    });
-  } catch (err) {
-    if (err.code === '23505') {
-      return res.status(409).json({ error: 'Ese documento o username ya existe' });
-    }
-    console.error(err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
 
 // POST /auth/login (username y password van en el body como JSON)
 // Proceso de sesion: Login -> revisa si tiene sesion
@@ -82,26 +36,26 @@ router.post('/login', async (req, res) => {
     req.session.pendingUserId = usuario.id;
     req.session.pendingUsername = usuario.username;
     return res.json({ message: 'Elige un perfil', profiles: usuario.profiles });
-
-    
-
-    res.json({ message: 'Sesion creada ok', session: getSession(req) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
-router.post('/select-profile', (req, res) => {
-  const { profileId } = req.body ?? {};
-  const userId = req.session.pendingUserId;
-  const username = req.session.pendingUsername;
+// POST /auth/select-profile
+// Sirve para elegir el perfil despues del login y para cambiarlo con la sesion abierta
+router.post('/select-profile', async (req, res) => {
+  const profileId = Number(req.body?.profileId);
+  const yaTieneSesion = sessionExist(req);
+  const userId = yaTieneSesion ? req.session.userData.userID : req.session.pendingUserId;
+  const username = yaTieneSesion ? req.session.userData.userName : req.session.pendingUsername;
 
   if (!userId) {
     return res.status(400).json({ error: 'No hay login pendiente' });
   }
 
-  db.exe('getUserProfiles', [userId]).then((perfiles) => {
+  try {
+    const perfiles = await db.exe('getUserProfiles', [userId]);
     const valido = perfiles.find((p) => p.id === profileId);
     if (!valido) {
       return res.status(400).json({ error: 'Perfil invalido para este usuario' });
@@ -110,8 +64,11 @@ router.post('/select-profile', (req, res) => {
     delete req.session.pendingUserId;
     delete req.session.pendingUsername;
     createSession(req, { id: userId, username }, profileId);
-    res.json({ message: 'Sesion creada ok', session: getSession(req) });
-  });
+    res.json({ message: yaTieneSesion ? 'Perfil cambiado' : 'Sesion creada ok', session: getSession(req) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
 // POST /auth/logout
