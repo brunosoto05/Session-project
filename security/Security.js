@@ -1,7 +1,7 @@
 import db from '../db/DBComponent.js';
 
 // Objeto de seguridad: al crearse carga los permisos y las transacciones en memoria
-export default class Security {
+ class Security {
   constructor() {
     this.permissionMethodMap = new Map();
     this.permissionOptionMap = new Map();
@@ -36,11 +36,13 @@ export default class Security {
     return this.permissionOptionMap.get(key) === true;
   }
 
-  setPermissionMethod(value) {
+  setPermissionMethod(key, value) {
+    this.permissionMethodMap.set(key, value);
     // investigar para desarrollar
   }
 
-  setPermissionOption(value) {
+  setPermissionOption(key, value) {
+    this.permissionOptionMap.set(key, value);
     // investigar para desarrollar
   }
 
@@ -51,4 +53,9 @@ export default class Security {
     let resp = await i[jsonData.Method](jsonData.params);
     return resp;
   }
+
+  
 }
+
+const security = new Security();
+export default security;

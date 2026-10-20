@@ -5,7 +5,7 @@ import connectPgSimple from 'connect-pg-simple';
 import pool from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
 import protectedRoutes from './routes/protected.routes.js';
-import Security from './security/Security.js';
+import sec from './security/Security.js';
 import { sessionExist } from './services/session.service.js';
 
 const pgSession = connectPgSimple(session);
@@ -41,7 +41,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'Servidor de sesiones corriendo correctamente' });
 });
 
-const sec = new Security();
+
 
 // Unico endpoint para ejecutar los metodos de negocio.
 // El cliente manda { tx, params }: tiene sesion -> tiene permiso -> ejecuta el metodo

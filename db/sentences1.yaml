@@ -123,3 +123,16 @@ deleteMethod: |
   )
   DELETE FROM method WHERE id = $1
   RETURNING id, description, tx
+
+getMethodInfo: |
+  SELECT s.description AS subsystem, c.description AS class, m.description AS method
+  FROM method m
+  JOIN class c ON c.id = m.class_id
+  JOIN subsystem s ON s.id = c.subsystem_id
+  WHERE m.id = $1
+
+getOptionInfo: |
+  SELECT s.description AS subsystem, o.description AS option
+  FROM option o
+  JOIN subsystem s ON s.id = o.subsystem_id
+  WHERE o.id = $1

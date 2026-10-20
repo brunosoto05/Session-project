@@ -74,18 +74,44 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ error: 'Usuario no existe' });
     }
 
-    if (usuario.profiles.length !== 1) {
-      // por terminar: elegir el perfil cuando el usuario tiene varios
-      return res.status(400).json({ error: 'El usuario debe tener un perfil para entrar' });
+    if (usuario.profiles.length === 1) {
+      createSession(req, usuario, usuario.profiles[0].id);
+      return res.json({ message: 'Sesion creada ok', session: getSession(req) });
     }
 
-    createSession(req, usuario, usuario.profiles[0].id);
+    req.session.pendingUserId = usuario.id;
+    req.session.pendingUsername = usuario.username;
+    return res.json({ message: 'Elige un perfil', profiles: usuario.profiles });
+
+    
 
     res.json({ message: 'Sesion creada ok', session: getSession(req) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
+});
+
+router.post('/select-profile', (req, res) => {
+  const { profileId } = req.body ?? {};
+  const userId = req.session.pendingUserId;
+  const username = req.session.pendingUsername;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'No hay login pendiente' });
+  }
+
+  db.exe('getUserProfiles', [userId]).then((perfiles) => {
+    const valido = perfiles.find((p) => p.id === profileId);
+    if (!valido) {
+      return res.status(400).json({ error: 'Perfil invalido para este usuario' });
+    }
+
+    delete req.session.pendingUserId;
+    delete req.session.pendingUsername;
+    createSession(req, { id: userId, username }, profileId);
+    res.json({ message: 'Sesion creada ok', session: getSession(req) });
+  });
 });
 
 // POST /auth/logout
