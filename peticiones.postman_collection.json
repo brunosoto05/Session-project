@@ -331,7 +331,26 @@
       }
     },
     {
-      "name": "12. Desactivar usuario (tx 2)",
+      "name": "12. Ver menu del perfil",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/menu",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "menu"
+          ]
+        }
+      }
+    },
+    {
+      "name": "13. Desactivar usuario (tx 2)",
       "request": {
         "method": "POST",
         "header": [
@@ -363,7 +382,7 @@
       }
     },
     {
-      "name": "13. Registro",
+      "name": "14. Crear usuario juan con perfil user (tx 1)",
       "request": {
         "method": "POST",
         "header": [
@@ -373,20 +392,19 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:3000/auth/register",
+          "raw": "http://localhost:3000/toProcess",
           "protocol": "http",
           "host": [
             "localhost"
           ],
           "port": "3000",
           "path": [
-            "auth",
-            "register"
+            "toProcess"
           ]
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"document\": \"87654321\",\n  \"first_name\": \"Juan\",\n  \"last_name\": \"Perez\",\n  \"username\": \"juan\",\n  \"email\": \"juan@correo.com\",\n  \"password\": \"1234abcd\"\n}",
+          "raw": "{\n  \"tx\": 1,\n  \"params\": [\n    \"87654321\",\n    \"Juan\",\n    \"Perez\",\n    \"juan\",\n    \"juan@correo.com\",\n    \"1234abcd\",\n    [\n      \"user\"\n    ]\n  ]\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -396,7 +414,7 @@
       }
     },
     {
-      "name": "14. Logout",
+      "name": "15. Logout",
       "request": {
         "method": "POST",
         "header": [],
@@ -415,7 +433,7 @@
       }
     },
     {
-      "name": "15. Login juan (perfil user)",
+      "name": "16. Login juan (perfil user)",
       "request": {
         "method": "POST",
         "header": [
@@ -448,7 +466,7 @@
       }
     },
     {
-      "name": "16. toProcess sin permiso (403)",
+      "name": "17. toProcess sin permiso (403)",
       "request": {
         "method": "POST",
         "header": [
@@ -471,6 +489,39 @@
         "body": {
           "mode": "raw",
           "raw": "{\n  \"tx\": 4,\n  \"params\": [\n    \"otro\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "18. Cambiar de perfil con la sesion abierta (perfil invalido = 400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/auth/select-profile",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "auth",
+            "select-profile"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"profileId\": 1\n}",
           "options": {
             "raw": {
               "language": "json"

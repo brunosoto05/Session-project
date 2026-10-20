@@ -105,19 +105,28 @@ GET http://localhost:3000/api/profile
 POST http://localhost:3000/auth/logout
 ```
 
-### Registro
+### Elegir o cambiar de perfil
+Si el usuario tiene varios perfiles, el login responde "Elige un perfil" con la
+lista, y se elige uno:
 ```
-POST http://localhost:3000/auth/register
+POST http://localhost:3000/auth/select-profile
 Body (JSON):
 {
-  "document": "12345678",
-  "first_name": "Juan",
-  "last_name": "Perez",
-  "username": "juan",
-  "email": "juan@correo.com",
-  "password": "1234abcd"
+  "profileId": 2
 }
 ```
+La misma ruta sirve con la sesion abierta para cambiar de perfil sin volver a
+hacer login.
+
+### Menu
+```
+GET http://localhost:3000/api/menu
+```
+Devuelve las opciones a las que tiene permiso el perfil de la sesion.
+
+### Crear usuarios
+No hay registro abierto: los usuarios los crea un usuario con permiso desde el
+mantenimiento de seguridad (`tx` 1, ver abajo).
 
 ## 6. Ejecutar metodos: POST /toProcess
 
