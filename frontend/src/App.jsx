@@ -95,14 +95,17 @@ useEffect(() => {
       <h1>Login</h1>
 
       
-
-      <input type = "text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-      <input type = "password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-
-      <button onClick={handleLogin}>Entrar</button>
+      {!sesion && (
+        <div>
+          <input type = "text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <input type = "password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <button onClick={handleLogin}>Entrar</button>
+        </div>
+      )}
       <button onClick={handleLogout}>Salir</button>
       <p>{mensaje}</p>
       {sesion ? <p>Hola, {sesion.userName}</p> : <p> Inicia Sesion</p>}
+      
       <ul>
         {modulos.map((m) => (
           <li key={m.option}>{m.subsystem} / {m.option}</li>
