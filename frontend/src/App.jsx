@@ -113,15 +113,16 @@ useEffect(() => {
       </div>
       
      <div className="menu">
-      <ul>
+        <ul>
         {modulos.map((m) => (
           <li key={m.option}>{m.subsystem} / {m.option}</li>
         ))}
         </ul>
+        <div className="perfiles">
         {perfiles.map((p) => (
           <button key={p.id} onClick={() => elegirPerfil(p.id)}>{p.name}</button>
         ))}
-      
+      </div>
       </div>
     </div>
   )
