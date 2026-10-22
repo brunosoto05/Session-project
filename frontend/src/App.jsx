@@ -1,4 +1,5 @@
 import {useState, useEffect} from 'react';
+import './App.css';
 
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ username, password })
+      
       
     })
     const data = await response.json();
@@ -27,7 +29,7 @@ function App() {
   }
 
   const handleLogout = async () => {
-    const response = await fetch('/auth/logout', {
+     await fetch('/auth/logout', {
       method: 'POST',
 
       
@@ -46,8 +48,8 @@ function App() {
 
   const cargarMenu = async () => {
     const getRespuestaMenu = await fetch('/api/menu')
-    const DatosMenu = await getRespuestaMenu.json();
-    setModulos(DatosMenu.modulos)
+    const datosMenu = await getRespuestaMenu.json();
+    setModulos(datosMenu.modulos || [])
   }
 
   const elegirPerfil = async (profileId) => {
@@ -96,24 +98,31 @@ useEffect(() => {
 
       
       {!sesion && (
-        <div>
+        <div className="login-card">
           <input type = "text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
           <input type = "password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
           <button onClick={handleLogin}>Entrar</button>
         </div>
       )}
-      <button onClick={handleLogout}>Salir</button>
+
+      
+      <div className="estado">
+        <button onClick={handleLogout}>Salir</button>
       <p>{mensaje}</p>
       {sesion ? <p>Hola, {sesion.userName}</p> : <p> Inicia Sesion</p>}
+      </div>
       
+     <div className="menu">
       <ul>
         {modulos.map((m) => (
           <li key={m.option}>{m.subsystem} / {m.option}</li>
         ))}
+        </ul>
         {perfiles.map((p) => (
           <button key={p.id} onClick={() => elegirPerfil(p.id)}>{p.name}</button>
         ))}
-      </ul>
+      
+      </div>
     </div>
   )
 }
