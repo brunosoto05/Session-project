@@ -118,3 +118,17 @@ h1 {
 .perfiles button:hover {
   background-color: var(--color-principal-oscuro);
 }
+
+h1 {
+  font-size: 32px;
+  margin: 32px 0 16px;
+  color: var(--color-principal);
+}
+
+.mensaje-error {
+  color: #b91c1c;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 8px 12px;
+}

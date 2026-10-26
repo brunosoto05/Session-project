@@ -17,6 +17,7 @@ function App() {
     })
     const data = await response.json();
     setMensaje(data.message || data.error);
+    setEsError(!response.ok);
 
     if (data.profiles){
       setPerfiles(data.profiles)
@@ -40,6 +41,7 @@ function App() {
     setPassword('');
     setPerfiles([]);
     setSesion(null);
+    setEsError(false);
 
     
       
@@ -62,6 +64,7 @@ function App() {
     });
     const data = await response.json();
     setMensaje(data.message || data.error);
+    setEsError(!response.ok);
 
     if (data.session){
       setSesion(data.session);
@@ -76,6 +79,7 @@ function App() {
   const[modulos, setModulos] = useState([]);
   const[perfiles, setPerfiles] = useState([]);
   const[sesion, setSesion] = useState(null);
+  const[esError, setEsError]= useState(false);
 
 
 useEffect(() => {
@@ -107,10 +111,10 @@ useEffect(() => {
 
       
       <div className="estado">
-        <button onClick={handleLogout}>Salir</button>
-      <p>{mensaje}</p>
-      {sesion ? <p>Hola, {sesion.userName}</p> : <p> Inicia Sesion</p>}
-      </div>
+  {sesion && <button onClick={handleLogout}>Salir</button>}
+  {sesion && <p>Hola, {sesion.userName}</p>}
+   <p className={esError ? 'mensaje mensaje-error' : 'mensaje'}>{mensaje}</p>
+</div>
       
      <div className="menu">
         <ul>
@@ -124,7 +128,11 @@ useEffect(() => {
         ))}
       </div>
       </div>
+      
     </div>
+
+    
+
   )
 }
 
