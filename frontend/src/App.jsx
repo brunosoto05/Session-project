@@ -80,25 +80,42 @@ function App() {
   const[perfiles, setPerfiles] = useState([]);
   const[sesion, setSesion] = useState(null);
   const[esError, setEsError]= useState(false);
+  const [cargando,setCargando]= useState(true);
 
 
 useEffect(() => {
   const revisarSesion = async () => {
+   try{
     const response = await fetch('/api/profile');
     if (response.ok) {
       const data = await response.json();
       setMensaje(data.message );
       setSesion(data.session);
       await cargarMenu();
+
     }
+  }finally {
+    setCargando(false);
   }
+
+  } 
   revisarSesion();
 }, []);
 
-
+ if (cargando){
+  return <p>Cargando...</p>
+ }
   return (
-    <div className="App">
-      <h1>Login</h1>
+
+      <div className="App">
+        {sesion && (<header className="barra">
+          <span className="barra-titulo">Sistema de nomina</span>
+          <div className="barra-usuario">
+            <span>{sesion.userName}</span>
+            <button onClick={handleLogout}>Salir</button>
+          </div>
+        </header>)}
+      {!sesion && <h1>Login</h1>}
 
       
       {!sesion && (
@@ -110,11 +127,6 @@ useEffect(() => {
       )}
 
       
-      <div className="estado">
-  {sesion && <button onClick={handleLogout}>Salir</button>}
-  {sesion && <p>Hola, {sesion.userName}</p>}
-   <p className={esError ? 'mensaje mensaje-error' : 'mensaje'}>{mensaje}</p>
-</div>
       
      <div className="menu">
         <ul>

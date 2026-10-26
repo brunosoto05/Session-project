@@ -132,3 +132,77 @@ h1 {
   border-radius: 6px;
   padding: 8px 12px;
 }
+
+.barra {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 24px;
+  padding: 12px 20px;
+  color: white;
+  background-color: var(--color-principal);
+  border-radius: 8px;
+}
+
+.barra-titulo {
+  font-weight: 600;
+}
+
+.barra-usuario {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.barra button {
+  padding: 6px 14px;
+  color: white;
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.barra button:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 26px;
+  }
+
+  .login-card button,
+  .perfiles button {
+    min-height: 44px;
+  }
+
+  .perfiles {
+    flex-wrap: wrap;
+  }
+}
