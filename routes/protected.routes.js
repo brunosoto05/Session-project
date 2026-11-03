@@ -2,6 +2,7 @@ import express from 'express';
 import { isAuthenticated } from '../middleware/auth.js';
 import { getSession } from '../services/session.service.js';
 import sec from '../security/Security.js';
+import db from '../db/DBComponent.js';
 
 
 const router = express.Router();
@@ -12,6 +13,17 @@ router.get('/profile', isAuthenticated, (req, res) => {
     message: 'Este es tu perfil',
     session: getSession(req),
   });
+});
+
+// GET /api/profiles - perfiles del usuario de la sesion, para cambiar de perfil
+router.get('/profiles', isAuthenticated, async (req, res) => {
+  try {
+    const perfiles = await db.exe('getUserProfiles', [req.session.userData.userID]);
+    res.json({ profiles: perfiles });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
 router.get('/menu', isAuthenticated, (req, res) => {
