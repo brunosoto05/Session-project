@@ -26,6 +26,7 @@ function App() {
     if (data.session){
       setSesion(data.session);
       await cargarMenu();
+      await cargarPerfiles();
     }
   }
 
@@ -40,6 +41,7 @@ function App() {
     setUsername('');
     setPassword('');
     setPerfiles([]);
+    setPerfilesUsuario([]);
     setSesion(null);
     setEsError(false);
 
@@ -52,6 +54,12 @@ function App() {
     const getRespuestaMenu = await fetch('/api/menu')
     const datosMenu = await getRespuestaMenu.json();
     setModulos(datosMenu.modulos || [])
+  }
+
+  const cargarPerfiles = async () => {
+    const response = await fetch('/api/profiles')
+    const data = await response.json();
+    setPerfilesUsuario(data.profiles || [])
   }
 
   const elegirPerfil = async (profileId) => {
@@ -68,8 +76,9 @@ function App() {
 
     if (data.session){
       setSesion(data.session);
-      setPerfiles([]) 
+      setPerfiles([])
       await cargarMenu();
+      await cargarPerfiles();
     }
   }
 
@@ -78,6 +87,7 @@ function App() {
   const [mensaje, setMensaje] = useState('');
   const[modulos, setModulos] = useState([]);
   const[perfiles, setPerfiles] = useState([]);
+  const[perfilesUsuario, setPerfilesUsuario] = useState([]);
   const[sesion, setSesion] = useState(null);
   const[esError, setEsError]= useState(false);
   const [cargando,setCargando]= useState(true);
@@ -89,9 +99,9 @@ useEffect(() => {
     const response = await fetch('/api/profile');
     if (response.ok) {
       const data = await response.json();
-      setMensaje(data.message );
       setSesion(data.session);
       await cargarMenu();
+      await cargarPerfiles();
 
     }
   }finally {
@@ -112,10 +122,34 @@ useEffect(() => {
           <span className="barra-titulo">Sistema de nomina</span>
           <div className="barra-usuario">
             <span>{sesion.userName}</span>
+            {perfilesUsuario.length > 1 ? (
+              <select value={sesion.profile} onChange={(e) => elegirPerfil(Number(e.target.value))}>
+                {perfilesUsuario.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            ) : (
+              <span>{perfilesUsuario[0]?.name}</span>
+            )}
             <button onClick={handleLogout}>Salir</button>
           </div>
         </header>)}
       {!sesion && <h1>Login</h1>}
+
+      {mensaje && (
+        <div className="estado">
+          <p className={esError ? 'mensaje-error' : 'mensaje'}>{mensaje}</p>
+        </div>
+      )}
+
+      {sesion && (
+        <div className="sesion-card">
+          <h2>Mi sesion</h2>
+          <p>userID: {sesion.userID}</p>
+          <p>userName: {sesion.userName}</p>
+          <p>profile: {sesion.profile} ({perfilesUsuario.find((p) => p.id === sesion.profile)?.name})</p>
+        </div>
+      )}
 
       
       {!sesion && (
