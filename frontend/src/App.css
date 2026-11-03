@@ -169,6 +169,42 @@ h1 {
   background-color: rgba(255, 255, 255, 0.15);
 }
 
+.barra select {
+  padding: 6px 8px;
+  color: var(--color-principal);
+  background-color: white;
+  border: none;
+  border-radius: 6px;
+}
+
+.mensaje {
+  color: var(--color-principal);
+  background-color: #eef2f7;
+  border: 1px solid var(--color-borde);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.sesion-card {
+  max-width: 320px;
+  margin: 24px auto 0;
+  padding: 16px 20px;
+  background-color: var(--color-tarjeta);
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+}
+
+.sesion-card h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: var(--color-principal);
+}
+
+.sesion-card p {
+  margin: 4px 0;
+  font-family: monospace;
+}
+
 
 
 
