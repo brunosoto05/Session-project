@@ -9,6 +9,7 @@ export default defineConfig({
   proxy: {
     '/auth': 'http://localhost:3000',
     '/api': 'http://localhost:3000',
+    '/toProcess': 'http://localhost:3000',
   },
 },
 })

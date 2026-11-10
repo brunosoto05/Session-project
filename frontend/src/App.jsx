@@ -1,5 +1,6 @@
 import {useState, useEffect} from 'react';
 import './App.css';
+import Permisos from './Permisos.jsx';
 
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
 
     if (data.profiles){
       setPerfiles(data.profiles)
+      setPerfilElegido(data.profiles[0].id)
     }
 
     if (data.session){
@@ -44,6 +46,7 @@ function App() {
     setPerfilesUsuario([]);
     setSesion(null);
     setEsError(false);
+    setPantalla('');
 
     
       
@@ -91,6 +94,8 @@ function App() {
   const[sesion, setSesion] = useState(null);
   const[esError, setEsError]= useState(false);
   const [cargando,setCargando]= useState(true);
+  const [perfilElegido, setPerfilElegido] = useState('');
+  const [pantalla, setPantalla] = useState('');
 
 
 useEffect(() => {
@@ -152,7 +157,7 @@ useEffect(() => {
       )}
 
       
-      {!sesion && (
+      {!sesion && perfiles.length === 0 && (
         <div className="login-card">
           <input type = "text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
           <input type = "password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -165,15 +170,28 @@ useEffect(() => {
      <div className="menu">
         <ul>
         {modulos.map((m) => (
-          <li key={m.option}>{m.subsystem} / {m.option}</li>
+          <li key={m.option}>
+            <button onClick={() => setPantalla(m.option)}>{m.subsystem} / {m.option}</button>
+          </li>
         ))}
         </ul>
-        <div className="perfiles">
-        {perfiles.map((p) => (
-          <button key={p.id} onClick={() => elegirPerfil(p.id)}>{p.name}</button>
-        ))}
       </div>
-      </div>
+
+      {!sesion && perfiles.length > 0 && (
+        <div className="login-card">
+          <label htmlFor="perfil-login">Perfil</label>
+          <select id="perfil-login" value={perfilElegido} onChange={(e) => setPerfilElegido(Number(e.target.value))}>
+            {perfiles.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <button onClick={() => elegirPerfil(perfilElegido)}>Entrar</button>
+        </div>
+      )}
+
+      {sesion && pantalla === 'Permisos' && modulos.some((m) => m.option === 'Permisos') && (
+        <Permisos perfilSesion={sesion.profile} alCambiar={cargarMenu} />
+      )}
       
     </div>
 
