@@ -6,4 +6,8 @@ export default class Profile {
     const [perfil] = await db.exe('createProfile', params);
     return perfil;
   }
+
+  async list() {
+    return db.exe('getProfiles');
+  }
 }

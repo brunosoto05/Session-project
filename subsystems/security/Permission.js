@@ -21,4 +21,12 @@ export default class Permission {
     const key = `${info.subsystem}_${info.option}_${profileId}`;
     return security.setPermissionOption(key, value);
   }
+
+  // params: [profileId]
+  async list(params) {
+    const [profileId] = params;
+    const methods = await db.exe('getMethodsByProfile', [profileId]);
+    const options = await db.exe('getOptionsByProfile', [profileId]);
+    return { methods, options };
+  }
 }

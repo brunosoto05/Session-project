@@ -71,6 +71,10 @@ addUserProfile: |
   ON CONFLICT DO NOTHING
   RETURNING user_id, profile_id
 
+getProfiles: |
+  SELECT id, name FROM profile
+  ORDER BY name
+
 createProfile: |
   INSERT INTO profile (name) VALUES ($1)
   RETURNING id, name
@@ -142,3 +146,22 @@ getOptionInfo: |
   FROM option o
   JOIN subsystem s ON s.id = o.subsystem_id
   WHERE o.id = $1
+
+# Para la pantalla de permisos: todos los metodos y opciones con el value del perfil.
+# Si el perfil no tiene fila en la tabla de permisos sale como false
+getMethodsByProfile: |
+  SELECT m.id, s.description AS subsystem, c.description AS class,
+         m.description AS method, m.tx, COALESCE(pm.value, false) AS value
+  FROM method m
+  JOIN class c ON c.id = m.class_id
+  JOIN subsystem s ON s.id = c.subsystem_id
+  LEFT JOIN permission_method pm ON pm.method_id = m.id AND pm.profile_id = $1
+  ORDER BY m.tx
+
+getOptionsByProfile: |
+  SELECT o.id, s.description AS subsystem, o.description AS option,
+         COALESCE(po.value, false) AS value
+  FROM option o
+  JOIN subsystem s ON s.id = o.subsystem_id
+  LEFT JOIN permission_option po ON po.option_id = o.id AND po.profile_id = $1
+  ORDER BY s.description, o.description
