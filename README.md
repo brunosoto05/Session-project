@@ -164,7 +164,11 @@ Transacciones del subsistema de seguridad:
 | 12 | Method | create | `[classId, description, tx]` |
 | 13 | Method | delete | `[methodId]` |
 | 14 | Profile | list | `[]` |
-| 15 | Permission | list | `[profileId]` (metodos y opciones con su value) |
+| 15 | Permission | list | `[profileId, subsystemId, classId]` (metodos de la clase y opciones del subsistema con su value) |
+| 16 | Subsystem | list | `[]` |
+| 17 | Class | list | `[subsystemId]` |
+| 18 | Permission | grantClass | `[profileId, classId, true/false]` (todos los metodos de la clase) |
+| 19 | User | list | `[]` (usuarios con su persona y sus perfiles) |
 
 Los permisos y transacciones nuevos se cargan en memoria al reiniciar el
 servidor.
