@@ -115,7 +115,11 @@ FROM (VALUES
         ('Method', 'create', 12),
         ('Method', 'delete', 13),
         ('Profile', 'list', 14),
-        ('Permission', 'list', 15)
+        ('Permission', 'list', 15),
+        ('Subsystem', 'list', 16),
+        ('Class', 'list', 17),
+        ('Permission', 'grantClass', 18),
+        ('User', 'list', 19)
      ) AS m(class_name, method, tx)
 JOIN class c ON c.description = m.class_name
 JOIN subsystem s ON s.id = c.subsystem_id AND s.description = 'security'

@@ -18,6 +18,10 @@ export default class User {
     return usuario;
   }
 
+  async list() {
+    return db.exe('getUsers');
+  }
+
   // params: [userId, active]
   async setActive(params) {
     const [usuario] = await db.exe('setActiveUser', params);

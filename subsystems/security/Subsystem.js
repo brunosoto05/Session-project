@@ -6,4 +6,8 @@ export default class Subsystem {
     const [subsistema] = await db.exe('createSubsystem', params);
     return subsistema;
   }
+
+  async list() {
+    return db.exe('getSubsystems');
+  }
 }

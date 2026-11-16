@@ -7,6 +7,11 @@ export default class Class {
     return clase;
   }
 
+  // params: [subsystemId]
+  async list(params) {
+    return db.exe('getClassesBySubsystem', params);
+  }
+
   // params: [classId]
   async delete(params) {
     const [clase] = await db.exe('deleteClass', params);

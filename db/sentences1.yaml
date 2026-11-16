@@ -60,6 +60,22 @@ getTransactions: |
 
 # --- Mantenimiento de seguridad ---
 
+# Para la pantalla de usuarios: cada usuario con su persona y los perfiles que tiene
+getUsers: |
+  SELECT u.id, u.username, u.email, u.active,
+         p.document, p.first_name, p.last_name,
+         COALESCE(
+           json_agg(json_build_object('id', pr.id, 'name', pr.name) ORDER BY pr.name)
+             FILTER (WHERE pr.id IS NOT NULL),
+           '[]'
+         ) AS profiles
+  FROM "user" u
+  JOIN person p ON p.id = u.person_id
+  LEFT JOIN user_profile up ON up.user_id = u.id
+  LEFT JOIN profile pr ON pr.id = up.profile_id
+  GROUP BY u.id, p.id
+  ORDER BY p.last_name, p.first_name
+
 setActiveUser: |
   UPDATE "user" SET active = $2
   WHERE id = $1
@@ -147,21 +163,35 @@ getOptionInfo: |
   JOIN subsystem s ON s.id = o.subsystem_id
   WHERE o.id = $1
 
-# Para la pantalla de permisos: todos los metodos y opciones con el value del perfil.
-# Si el perfil no tiene fila en la tabla de permisos sale como false
-getMethodsByProfile: |
+# --- Pantalla de permisos: filtros de subsistema y clase ---
+
+getSubsystems: |
+  SELECT id, description FROM subsystem
+  ORDER BY description
+
+getClassesBySubsystem: |
+  SELECT id, description FROM class
+  WHERE subsystem_id = $1
+  ORDER BY description
+
+# Metodos de una clase con el value del perfil. Sin fila de permiso sale false
+# $1 = clase, $2 = perfil
+getMethodsByClass: |
   SELECT m.id, s.description AS subsystem, c.description AS class,
          m.description AS method, m.tx, COALESCE(pm.value, false) AS value
   FROM method m
   JOIN class c ON c.id = m.class_id
   JOIN subsystem s ON s.id = c.subsystem_id
-  LEFT JOIN permission_method pm ON pm.method_id = m.id AND pm.profile_id = $1
+  LEFT JOIN permission_method pm ON pm.method_id = m.id AND pm.profile_id = $2
+  WHERE c.id = $1
   ORDER BY m.tx
 
-getOptionsByProfile: |
+# $1 = subsistema, $2 = perfil
+getOptionsBySubsystem: |
   SELECT o.id, s.description AS subsystem, o.description AS option,
          COALESCE(po.value, false) AS value
   FROM option o
   JOIN subsystem s ON s.id = o.subsystem_id
-  LEFT JOIN permission_option po ON po.option_id = o.id AND po.profile_id = $1
-  ORDER BY s.description, o.description
+  LEFT JOIN permission_option po ON po.option_id = o.id AND po.profile_id = $2
+  WHERE s.id = $1
+  ORDER BY o.description

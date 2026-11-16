@@ -1,6 +1,7 @@
 import {useState, useEffect} from 'react';
 import './App.css';
 import Permisos from './Permisos.jsx';
+import Usuarios from './Usuarios.jsx';
 
 
 function App() {
@@ -191,6 +192,10 @@ useEffect(() => {
 
       {sesion && pantalla === 'Permisos' && modulos.some((m) => m.option === 'Permisos') && (
         <Permisos perfilSesion={sesion.profile} alCambiar={cargarMenu} />
+      )}
+
+      {sesion && pantalla === 'Usuarios' && modulos.some((m) => m.option === 'Usuarios') && (
+        <Usuarios />
       )}
       
     </div>

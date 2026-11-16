@@ -22,11 +22,23 @@ export default class Permission {
     return security.setPermissionOption(key, value);
   }
 
-  // params: [profileId]
+  // params: [profileId, subsystemId, classId]
   async list(params) {
-    const [profileId] = params;
-    const methods = await db.exe('getMethodsByProfile', [profileId]);
-    const options = await db.exe('getOptionsByProfile', [profileId]);
+    const [profileId, subsystemId, classId] = params;
+    const methods = classId ? await db.exe('getMethodsByClass', [classId, profileId]) : [];
+    const options = await db.exe('getOptionsBySubsystem', [subsystemId, profileId]);
     return { methods, options };
+  }
+
+  // Pone o quita el permiso a todos los metodos de una clase
+  // params: [profileId, classId, value]
+  async grantClass(params) {
+    const [profileId, classId, value] = params;
+    const methods = await db.exe('getMethodsByClass', [classId, profileId]);
+    for (const m of methods) {
+      const key = `${m.subsystem}_${m.class}_${m.method}_${profileId}`;
+      await security.setPermissionMethod(key, value);
+    }
+    return { changed: methods.length };
   }
 }
