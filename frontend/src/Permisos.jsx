@@ -13,22 +13,22 @@ const nombres = {
   'Profile.list': 'Ver perfiles',
   Permission: 'Permisos',
   'Permission.grantMethod': 'Cambiar permisos de acciones',
-  'Permission.grantOption': 'Cambiar permisos del menu',
+  'Permission.grantOption': 'Cambiar permisos del menú',
   'Permission.list': 'Ver permisos',
   'Permission.grantClass': 'Cambiar permisos de una clase completa',
   Subsystem: 'Subsistemas',
   'Subsystem.create': 'Crear subsistemas',
   'Subsystem.list': 'Ver subsistemas',
-  Option: 'Opciones del menu',
+  Option: 'Opciones del menú',
   'Option.create': 'Crear opciones',
   'Option.delete': 'Eliminar opciones',
   Class: 'Clases',
   'Class.create': 'Crear clases',
   'Class.delete': 'Eliminar clases',
   'Class.list': 'Ver clases',
-  Method: 'Metodos',
-  'Method.create': 'Crear metodos',
-  'Method.delete': 'Eliminar metodos',
+  Method: 'Métodos',
+  'Method.create': 'Crear métodos',
+  'Method.delete': 'Eliminar métodos',
 };
 
 const nombre = (clave) => nombres[clave] || clave;
@@ -139,9 +139,9 @@ function Permisos({ perfilSesion, alCambiar }) {
     <div className="permisos">
       <div className="permisos-encabezado">
         <div>
-          <h2>Asignacion de permisos</h2>
+          <h2>Asignación de permisos</h2>
           <p>
-            Estas editando los permisos del perfil <strong>{perfiles.find((p) => p.id === perfilId)?.name}</strong>
+            Estás editando los permisos del perfil <strong>{perfiles.find((p) => p.id === perfilId)?.name}</strong>
           </p>
         </div>
       </div>
@@ -177,7 +177,7 @@ function Permisos({ perfilSesion, alCambiar }) {
 
       <section className="permisos-seccion">
         <div className="permisos-titulo">
-          <h3>Metodos de {nombre(claseActual)}</h3>
+          <h3>Métodos de {nombre(claseActual)}</h3>
           <span className="contador">{activos(metodos)} de {metodos.length}</span>
           <div className="permisos-maestro">
             <button type="button" onClick={() => cambiarTodos(true)} disabled={!claseId}>Marcar todos</button>
@@ -189,7 +189,7 @@ function Permisos({ perfilSesion, alCambiar }) {
           <thead>
             <tr>
               <th>Permiso</th>
-              <th>Metodo</th>
+              <th>Método</th>
             </tr>
           </thead>
           <tbody>
@@ -210,24 +210,24 @@ function Permisos({ perfilSesion, alCambiar }) {
             ))}
             {metodos.length === 0 && (
               <tr>
-                <td colSpan="2" className="tabla-vacia">Esta clase no tiene metodos</td>
+                <td colSpan="2" className="tabla-vacia">Esta clase no tiene métodos</td>
               </tr>
             )}
           </tbody>
         </table>
 
         <div className="paginacion">
-          <button type="button" onClick={() => setPagina(1)} disabled={pagina === 1} aria-label="Primera pagina">|&lt;</button>
-          <button type="button" onClick={() => setPagina(pagina - 1)} disabled={pagina === 1} aria-label="Pagina anterior">&lt;</button>
+          <button type="button" onClick={() => setPagina(1)} disabled={pagina === 1} aria-label="Primera página">|&lt;</button>
+          <button type="button" onClick={() => setPagina(pagina - 1)} disabled={pagina === 1} aria-label="Página anterior">&lt;</button>
           <span>{pagina}/{totalPaginas}</span>
-          <button type="button" onClick={() => setPagina(pagina + 1)} disabled={pagina === totalPaginas} aria-label="Pagina siguiente">&gt;</button>
-          <button type="button" onClick={() => setPagina(totalPaginas)} disabled={pagina === totalPaginas} aria-label="Ultima pagina">&gt;|</button>
+          <button type="button" onClick={() => setPagina(pagina + 1)} disabled={pagina === totalPaginas} aria-label="Página siguiente">&gt;</button>
+          <button type="button" onClick={() => setPagina(totalPaginas)} disabled={pagina === totalPaginas} aria-label="Última página">&gt;|</button>
         </div>
       </section>
 
       <section className="permisos-seccion">
         <div className="permisos-titulo">
-          <h3>Opciones del menu de {nombre(subsistemas.find((s) => s.id === subsistemaId)?.description)}</h3>
+          <h3>Opciones del menú de {nombre(subsistemas.find((s) => s.id === subsistemaId)?.description)}</h3>
           <span className="contador">{activos(opciones)} de {opciones.length}</span>
         </div>
         <div className="opciones">

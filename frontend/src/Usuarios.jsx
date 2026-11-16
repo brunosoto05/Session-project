@@ -79,7 +79,7 @@ function Usuarios() {
       setMostrarForm(false);
       await cargarUsuarios();
     } catch (e) {
-      setError(e.message + '. Revisa que la cedula y el usuario no esten repetidos');
+      setError(e.message + '. Revisa que la cédula y el usuario no estén repetidos');
     }
   };
 
@@ -124,7 +124,7 @@ function Usuarios() {
       {mostrarForm && (
         <form className="form-usuario" onSubmit={crearUsuario}>
           <label>
-            Cedula
+            Cédula
             <input value={form.document} onChange={(e) => cambiarCampo('document', e.target.value)} />
           </label>
           <label>
@@ -174,7 +174,7 @@ function Usuarios() {
             <thead>
               <tr>
                 <th>Activo</th>
-                <th>Cedula</th>
+                <th>Cédula</th>
                 <th>Nombre</th>
                 <th>Usuario</th>
                 <th>Correo</th>
