@@ -163,12 +163,14 @@ Transacciones del subsistema de seguridad:
 | 11 | Class | delete | `[classId]` |
 | 12 | Method | create | `[classId, description, tx]` |
 | 13 | Method | delete | `[methodId]` |
-| 14 | Profile | list | `[]` |
+| 14 | Profile | list | `[]` (cada perfil con cuantos usuarios lo tienen) |
 | 15 | Permission | list | `[profileId, subsystemId, classId]` (metodos de la clase y opciones del subsistema con su value) |
 | 16 | Subsystem | list | `[]` |
 | 17 | Class | list | `[subsystemId]` |
 | 18 | Permission | grantClass | `[profileId, classId, true/false]` (todos los metodos de la clase) |
 | 19 | User | list | `[]` (usuarios con su persona y sus perfiles) |
+| 20 | Profile | update | `[profileId, name]` (el perfil admin no se cambia) |
+| 21 | Profile | delete | `[profileId]` (solo si ningun usuario lo tiene; borra sus permisos; admin no se borra) |
 
 Los permisos y transacciones nuevos se cargan en memoria al reiniciar el
 servidor.
