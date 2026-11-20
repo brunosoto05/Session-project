@@ -2,6 +2,7 @@ import {useState, useEffect} from 'react';
 import './App.css';
 import Permisos from './Permisos.jsx';
 import Usuarios from './Usuarios.jsx';
+import Perfiles from './Perfiles.jsx';
 
 const subsistemas = {
   security: 'Seguridad',
@@ -9,7 +10,7 @@ const subsistemas = {
 
 const descripciones = {
   Usuarios: 'Crear usuarios, bloquearlos y asignarles perfiles',
-  Perfiles: 'Perfiles que existen en el sistema',
+  Perfiles: 'Crear, cambiar de nombre y borrar perfiles',
   Permisos: 'Qué puede hacer cada perfil',
 };
 
@@ -268,7 +269,11 @@ useEffect(() => {
             <Usuarios />
           )}
 
-          {pantalla !== '' && !['Permisos', 'Usuarios'].includes(pantalla) && (
+          {pantalla === 'Perfiles' && puedeVer('Perfiles') && (
+            <Perfiles />
+          )}
+
+          {pantalla !== '' && !['Permisos', 'Usuarios', 'Perfiles'].includes(pantalla) && (
             <section className="permisos">
               <div className="permisos-encabezado">
                 <div>

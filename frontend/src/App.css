@@ -568,7 +568,9 @@ select {
   gap: 6px;
 }
 
-.agregar-perfil select {
+.agregar-perfil select,
+.agregar-perfil input,
+.input-tabla {
   padding: 4px 6px;
   border: 1px solid var(--color-borde);
   border-radius: 6px;
@@ -582,6 +584,20 @@ select {
   border: 1px solid var(--color-borde);
   border-radius: 6px;
   cursor: pointer;
+}
+
+.nuevo-perfil {
+  max-width: 420px;
+  padding: 16px 0;
+}
+
+.nuevo-perfil input {
+  flex: 1;
+  padding: 6px 8px;
+}
+
+.nuevo-perfil button {
+  padding: 6px 12px;
 }
 
 .agregar-perfil button:disabled {
