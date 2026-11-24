@@ -230,7 +230,7 @@ Transacciones del subsistema de nomina:
 | 32 | Concept | assign | `[conceptId, personId, value]` (value `null` = el del concepto) |
 | 33 | Concept | unassign | `[conceptId, personId]` |
 | 34 | Period | list | `[]` |
-| 35 | Period | create | `[frequency, start_date, end_date]` |
+| 35 | Period | create | `[frequency, start_date]` |
 | 36 | Hours | list | `[periodId]` (empleados por hora de la frecuencia del periodo) |
 | 37 | Hours | load | `[periodId, fileName, [{ document, hours }]]` |
 | 38 | Hours | set | `[periodId, personId, hours]` (correccion a mano) |
@@ -253,6 +253,11 @@ Horas: se cargan por periodo de dos formas, con un archivo (tx 37) o a mano
 para todos los empleados por hora del periodo (tx 38 por cada uno), y se
 corrigen fila por fila (tx 38). Si el periodo no existe se puede crear desde la
 misma pantalla (tx 35).
+
+Periodos: la semana va de lunes a domingo, la quincena del 1 al 15 o del 16 a
+fin de mes y el mes del 1 al ultimo dia. Al crear uno solo se manda la
+frecuencia y el dia de inicio; el fin lo calcula el servidor. Si el inicio no
+cuadra con la frecuencia, no se crea.
 
 Archivo de horas: CSV con dos columnas, `cedula,horas` (la primera linea puede
 ser el titulo). Las cedulas que no existen se ignoran. Hay uno de ejemplo en
