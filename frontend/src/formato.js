@@ -20,23 +20,28 @@ export const fechaHora = (texto) => {
 const iso = (a, m, d) => `${a}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 const diasDelMes = (a, m) => new Date(a, m, 0).getDate();
 
-// Fin del periodo segun la frecuencia y el dia de inicio ("2026-11-16", "quincenal" -> "2026-11-30")
+// Que dia puede empezar cada frecuencia
+export const reglaInicio = {
+  semanal: 'La semana empieza siempre un lunes',
+  quincenal: 'La quincena empieza el día 1 o el 16',
+  mensual: 'El mes empieza el día 1',
+};
+
+// Fin del periodo segun la frecuencia y el dia de inicio ("2026-11-16", "quincenal" -> "2026-11-30").
+// Devuelve '' si el dia de inicio no vale para esa frecuencia
 export const finPeriodo = (frecuencia, inicio) => {
   if (!inicio) return '';
   const [a, m, d] = inicio.split('-').map(Number);
-  const sumarDias = (n) => {
-    const f = new Date(a, m - 1, d + n);
+  if (frecuencia === 'semanal') {
+    if (new Date(a, m - 1, d).getDay() !== 1) return '';
+    const f = new Date(a, m - 1, d + 6);
     return iso(f.getFullYear(), f.getMonth() + 1, f.getDate());
-  };
-  if (frecuencia === 'semanal') return sumarDias(6);
+  }
   if (frecuencia === 'quincenal') {
     if (d === 1) return iso(a, m, 15);
     if (d === 16) return iso(a, m, diasDelMes(a, m));
-    return sumarDias(14);
+    return '';
   }
-  // mensual: hasta el ultimo dia del mes, o un dia antes de la misma fecha del mes siguiente
   if (d === 1) return iso(a, m, diasDelMes(a, m));
-  const sigMes = m === 12 ? 1 : m + 1;
-  const sigAno = m === 12 ? a + 1 : a;
-  return iso(sigAno, sigMes, Math.min(d - 1, diasDelMes(sigAno, sigMes)));
+  return '';
 };

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { fecha, finPeriodo } from './formato.js';
+import { fecha, finPeriodo, reglaInicio } from './formato.js';
 
 // Formulario para crear un periodo: se elige la frecuencia y el dia de inicio,
 // y el fin se calcula solo
@@ -14,7 +14,11 @@ function FormPeriodo({ frecuenciaInicial = 'semanal', crear, alError }) {
       alError('Elige el día en que empieza el período');
       return;
     }
-    crear(frecuencia, inicio, fin);
+    if (!fin) {
+      alError(reglaInicio[frecuencia]);
+      return;
+    }
+    crear(frecuencia, inicio);
   };
 
   return (
@@ -33,10 +37,10 @@ function FormPeriodo({ frecuenciaInicial = 'semanal', crear, alError }) {
       </label>
       <div className="fin-periodo" aria-live="polite">
         <span>Termina el</span>
-        <strong>{fin ? fecha(fin) : 'Elige el día de inicio'}</strong>
+        <strong>{fin ? fecha(fin) : inicio ? reglaInicio[frecuencia] : 'Elige el día de inicio'}</strong>
       </div>
       <div className="form-acciones">
-        <button type="submit" className="boton-principal" disabled={!inicio}>Crear período</button>
+        <button type="submit" className="boton-principal" disabled={!fin}>Crear período</button>
       </div>
     </form>
   );

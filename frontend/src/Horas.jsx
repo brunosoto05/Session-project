@@ -4,6 +4,7 @@ import { bs } from './Paginacion.jsx';
 import { useConfirmar } from './Confirmar.jsx';
 import SelectorPeriodo, { nombrePeriodo } from './SelectorPeriodo.jsx';
 import FormPeriodo from './FormPeriodo.jsx';
+import { reglaInicio } from './formato.js';
 
 // El archivo es un CSV con dos columnas: cedula,horas (la primera linea puede ser el titulo)
 const leerCSV = (texto) =>
@@ -72,9 +73,13 @@ function Horas() {
   };
 
   // --- nuevo periodo ---
-  const crearPeriodo = async (frecuencia, inicio, fin) => {
+  const crearPeriodo = async (frecuencia, inicio) => {
     try {
-      const p = await toProcess(35, [frecuencia, inicio, fin]);
+      const p = await toProcess(35, [frecuencia, inicio]);
+      if (!p) {
+        setError(reglaInicio[frecuencia]);
+        return;
+      }
       await cargarPeriodos();
       setNuevoPeriodo(false);
       elegirPeriodo(p.id);

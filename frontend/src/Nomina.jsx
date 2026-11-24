@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import toProcess from './toProcess.js';
 import { useConfirmar } from './Confirmar.jsx';
 import SelectorPeriodo, { nombrePeriodo, fechas } from './SelectorPeriodo.jsx';
-import { fechaHora } from './formato.js';
+import { fechaHora, reglaInicio } from './formato.js';
 import FormPeriodo from './FormPeriodo.jsx';
 import Paginacion, { paginar, bs } from './Paginacion.jsx';
 
@@ -65,9 +65,13 @@ function Nomina() {
     cargarNominas(id);
   };
 
-  const crearPeriodo = async (frecuencia, inicio, fin) => {
+  const crearPeriodo = async (frecuencia, inicio) => {
     try {
-      const p = await toProcess(35, [frecuencia, inicio, fin]);
+      const p = await toProcess(35, [frecuencia, inicio]);
+      if (!p) {
+        setError(reglaInicio[frecuencia]);
+        return;
+      }
       avisar('Período creado');
       setMostrarForm(false);
       await cargarPeriodos();
