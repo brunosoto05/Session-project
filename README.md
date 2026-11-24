@@ -249,9 +249,15 @@ del periodo, el sueldo del periodo es su sueldo fijo o sus horas por su tarifa.
 Despues se le aplican todos los conceptos activos que son para todos y los que
 tiene asignados. Neto = lo que acredita menos lo que debita.
 
+Horas: se cargan por periodo de dos formas, con un archivo (tx 37) o a mano
+para todos los empleados por hora del periodo (tx 38 por cada uno), y se
+corrigen fila por fila (tx 38). Si el periodo no existe se puede crear desde la
+misma pantalla (tx 35).
+
 Archivo de horas: CSV con dos columnas, `cedula,horas` (la primera linea puede
 ser el titulo). Las cedulas que no existen se ignoran. Hay uno de ejemplo en
-`sql/horas-semana-2026-11-23.csv`.
+`sql/horas-semana-2026-11-23.csv`. En los datos de prueba la semana del 30 de
+noviembre queda sin horas, para cargarlas en la demostracion.
 
 Los permisos y transacciones nuevos se cargan en memoria al reiniciar el
 servidor.
