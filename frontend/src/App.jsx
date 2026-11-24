@@ -8,6 +8,8 @@ import Conceptos from './Conceptos.jsx';
 import Horas from './Horas.jsx';
 import Nomina from './Nomina.jsx';
 import Bitacora from './Bitacora.jsx';
+import Resumen from './Resumen.jsx';
+import Icono from './Iconos.jsx';
 
 const subsistemas = {
   security: 'Seguridad',
@@ -204,32 +206,19 @@ useEffect(() => {
   const menu = [...modulos].sort((a, b) => orden(a) - orden(b));
   const grupos = [...new Set(menu.map((m) => m.subsystem))];
   const puedeVer = (opcion) => modulos.some((m) => m.option === opcion);
+  const grupoActual = modulos.find((m) => m.option === pantalla)?.subsystem;
 
   return (
     <div className="app">
-      <header className="barra">
+      <aside className="lateral">
         <div className="marca">
           <span className="marca-logo" aria-hidden="true">N</span>
-          <span className="barra-titulo">Sistema de nómina</span>
+          <span className="marca-nombre">Sistema de nómina</span>
         </div>
-        <div className="barra-usuario">
-          <span className="barra-nombre">{sesion.userName}</span>
-          {perfilesUsuario.length > 1 ? (
-            <select value={sesion.profile} onChange={(e) => elegirPerfil(Number(e.target.value))} aria-label="Cambiar de perfil">
-              {perfilesUsuario.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          ) : (
-            <span className="barra-perfil">{perfilActual}</span>
-          )}
-          <button onClick={handleLogout}>Salir</button>
-        </div>
-      </header>
 
-      <div className="contenedor">
-        <nav className="lateral" aria-label="Menú">
+        <nav className="lateral-menu" aria-label="Menú">
           <button className={pantalla === '' ? 'lateral-item activo' : 'lateral-item'} onClick={() => setPantalla('')}>
+            <Icono nombre="Inicio" />
             Inicio
           </button>
           {grupos.map((g) => (
@@ -239,8 +228,10 @@ useEffect(() => {
                 <button
                   key={m.option}
                   className={pantalla === m.option ? 'lateral-item activo' : 'lateral-item'}
+                  aria-current={pantalla === m.option ? 'page' : undefined}
                   onClick={() => setPantalla(m.option)}
                 >
+                  <Icono nombre={m.option} />
                   {m.option}
                 </button>
               ))}
@@ -248,29 +239,79 @@ useEffect(() => {
           ))}
         </nav>
 
+        <div className="lateral-usuario">
+          <span className="avatar" aria-hidden="true">{sesion.userName.slice(0, 1).toUpperCase()}</span>
+          <div className="usuario-datos">
+            <span className="usuario-nombre">{sesion.userName}</span>
+            {perfilesUsuario.length > 1 ? (
+              <select value={sesion.profile} onChange={(e) => elegirPerfil(Number(e.target.value))} aria-label="Cambiar de perfil">
+                {perfilesUsuario.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            ) : (
+              <span className="usuario-perfil">{perfilActual}</span>
+            )}
+          </div>
+          <button type="button" className="boton-salir" onClick={handleLogout} aria-label="Salir" title="Salir">
+            <Icono nombre="salir" tam={18} />
+          </button>
+        </div>
+      </aside>
+
+      <div className="principal">
+        <header className="barra">
+          <span className="barra-titulo">
+            {grupoActual ? (
+              <>
+                <span className="miga">{subsistemas[grupoActual] || grupoActual}</span>
+                <span className="miga-separador" aria-hidden="true">/</span>
+                {pantalla}
+              </>
+            ) : 'Inicio'}
+          </span>
+          <span className="barra-fecha">{hoy}</span>
+        </header>
+
         <main className="contenido">
           {aviso}
 
           {pantalla === '' && (
             <section className="inicio">
-              <p className="inicio-fecha">{hoy}</p>
-              <h2>Bienvenido, {sesion.userName}</h2>
-              <p className="inicio-sub">
-                Estás trabajando como <strong>{perfilActual}</strong>.
-                {perfilesUsuario.length > 1 && ' Puedes cambiar de perfil arriba, junto a tu usuario.'}
-              </p>
+              <div className="inicio-cabeza">
+                <h2>Hola, {sesion.userName}</h2>
+                <p>
+                  Estás trabajando con el perfil <strong>{perfilActual}</strong>.
+                  {perfilesUsuario.length > 1 && ' Puedes cambiarlo abajo, en el menú.'}
+                </p>
+              </div>
 
-              <h3>¿Qué quieres hacer?</h3>
+              <Resumen verNomina={puedeVer('Nómina')} verEmpleados={puedeVer('Empleados')} ir={setPantalla} />
+
               {modulos.length === 0 ? (
-                <p className="inicio-sub">Tu perfil todavía no tiene opciones asignadas. Pídele al administrador que te dé acceso.</p>
+                <p className="tenue">Tu perfil todavía no tiene opciones asignadas. Pídele al administrador que te dé acceso.</p>
               ) : (
-                <div className="accesos">
-                  {menu.map((m) => (
-                    <button key={m.option} className="acceso" onClick={() => setPantalla(m.option)}>
-                      <span className="acceso-grupo">{subsistemas[m.subsystem] || m.subsystem}</span>
-                      <strong>{m.option}</strong>
-                      <span>{descripciones[m.option] || ''}</span>
-                    </button>
+                <div className="accesos-grupos">
+                  {grupos.map((g) => (
+                    <section key={g} className="panel">
+                      <div className="panel-cabeza">
+                        <h3>{subsistemas[g] || g}</h3>
+                      </div>
+                      <ul className="accesos">
+                        {menu.filter((m) => m.subsystem === g).map((m) => (
+                          <li key={m.option}>
+                            <button type="button" className="acceso" onClick={() => setPantalla(m.option)}>
+                              <span className="acceso-icono"><Icono nombre={m.option} /></span>
+                              <span className="acceso-texto">
+                                <strong>{m.option}</strong>
+                                <span>{descripciones[m.option] || ''}</span>
+                              </span>
+                              <Icono nombre="flecha" tam={18} />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
                   ))}
                 </div>
               )}

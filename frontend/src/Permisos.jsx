@@ -5,6 +5,9 @@ import { nombre } from './nombres.js';
 
 const POR_PAGINA = 5;
 
+// Metodos que el admin no se puede quitar: sin ellos no podria volver a dar permisos
+const protegidos = ['Permission.grantMethod', 'Permission.list', 'Profile.list', 'Subsystem.list', 'Class.list'];
+
 function Permisos({ perfilSesion, alCambiar }) {
   const [perfiles, setPerfiles] = useState([]);
   const [subsistemas, setSubsistemas] = useState([]);
@@ -104,6 +107,7 @@ function Permisos({ perfilSesion, alCambiar }) {
   const visibles = metodos.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
   const activos = (lista) => lista.filter((x) => x.value).length;
   const claseActual = clases.find((c) => c.id === claseId)?.description;
+  const esAdmin = perfiles.find((p) => p.id === perfilId)?.name === 'admin';
 
   return (
     <div className="permisos">
@@ -172,6 +176,7 @@ function Permisos({ perfilSesion, alCambiar }) {
                     className="switch"
                     aria-label={nombre(m.class + '.' + m.method)}
                     checked={m.value}
+                    disabled={esAdmin && m.value && m.subsystem === 'security' && protegidos.includes(`${m.class}.${m.method}`)}
                     onChange={() => cambiarMetodo(m)}
                   />
                 </td>
@@ -185,6 +190,10 @@ function Permisos({ perfilSesion, alCambiar }) {
             )}
           </tbody>
         </table>
+
+        {esAdmin && subsistemas.find((s) => s.id === subsistemaId)?.description === 'security' && (
+          <p className="nota-form">Al perfil admin no se le pueden quitar los permisos que hacen falta para volver a dar permisos (los que salen en gris).</p>
+        )}
 
         <div className="paginacion">
           <button type="button" onClick={() => setPagina(1)} disabled={pagina === 1} aria-label="Primera página">|&lt;</button>
@@ -201,13 +210,17 @@ function Permisos({ perfilSesion, alCambiar }) {
           <span className="contador">{activos(opciones)} de {opciones.length}</span>
         </div>
         <div className="opciones">
-          {opciones.map((o) => (
-            <label key={o.id} className={o.value ? 'opcion activa' : 'opcion'}>
-              <input type="checkbox" checked={o.value} onChange={() => cambiarOpcion(o)} />
-              {o.option}
-            </label>
-          ))}
+          {opciones.map((o) => {
+            const bloqueada = esAdmin && o.value;
+            return (
+              <label key={o.id} className={`${o.value ? 'opcion activa' : 'opcion'}${bloqueada ? ' bloqueada' : ''}`}>
+                <input type="checkbox" checked={o.value} disabled={bloqueada} onChange={() => cambiarOpcion(o)} />
+                {o.option}
+              </label>
+            );
+          })}
         </div>
+        {esAdmin && <p className="nota-form">Al perfil admin no se le pueden quitar opciones del menú, para que no se quede sin acceso.</p>}
       </section>
     </div>
   );

@@ -1,6 +1,8 @@
 import { useState, useEffect, Fragment } from 'react';
 import toProcess from './toProcess.js';
+import { useConfirmar } from './Confirmar.jsx';
 import Paginacion, { paginar, bs } from './Paginacion.jsx';
+import Icono from './Iconos.jsx';
 
 const vacio = {
   typeId: '',
@@ -34,6 +36,7 @@ function Conceptos() {
   const [pagina, setPagina] = useState(1);
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
+  const [confirmar, dialogo] = useConfirmar();
 
   const cargar = async () => {
     try {
@@ -114,7 +117,13 @@ function Conceptos() {
   };
 
   const eliminar = async (c) => {
-    if (!window.confirm(`¿Eliminar el concepto ${c.description}?`)) return;
+    const ok = await confirmar({
+      titulo: 'Eliminar concepto',
+      texto: `¿Eliminar el concepto ${c.description}? Si ya salió en una nómina no se puede eliminar.`,
+      boton: 'Eliminar',
+      peligro: true,
+    });
+    if (!ok) return;
     try {
       const borrado = await toProcess(31, [c.id]);
       if (!borrado) {
@@ -175,6 +184,7 @@ function Conceptos() {
 
   return (
     <div className="permisos">
+      {dialogo}
       <div className="permisos-encabezado">
         <div>
           <h2>Conceptos</h2>
@@ -296,7 +306,8 @@ function Conceptos() {
                     <td>
                       {c.applies_to_all ? 'Todos' : (
                         <button type="button" className="boton-texto" onClick={() => setAbierto(abierto === c.id ? null : c.id)}>
-                          {c.persons.length} {c.persons.length === 1 ? 'empleado' : 'empleados'} {abierto === c.id ? '▲' : '▼'}
+                          {c.persons.length} {c.persons.length === 1 ? 'empleado' : 'empleados'}
+                          <span className={abierto === c.id ? 'girar abierto' : 'girar'}><Icono nombre="abajo" tam={16} /></span>
                         </button>
                       )}
                     </td>
@@ -315,7 +326,7 @@ function Conceptos() {
                           {c.persons.map((p) => (
                             <span key={p.id} className="asignado">
                               {p.name}{p.value !== null && ` (${valorTexto(c, p.value)})`}
-                              <button type="button" onClick={() => quitar(c, p)} aria-label={`Quitar a ${p.name}`}>×</button>
+                              <button type="button" onClick={() => quitar(c, p)} aria-label={`Quitar a ${p.name}`}><Icono nombre="cerrar" tam={14} /></button>
                             </span>
                           ))}
                         </div>

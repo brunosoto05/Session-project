@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import toProcess from './toProcess.js';
 import { bs } from './Paginacion.jsx';
+import { useConfirmar } from './Confirmar.jsx';
+import SelectorPeriodo, { nombrePeriodo } from './SelectorPeriodo.jsx';
+import FormPeriodo from './FormPeriodo.jsx';
 
 // El archivo es un CSV con dos columnas: cedula,horas (la primera linea puede ser el titulo)
 const leerCSV = (texto) =>
@@ -10,7 +13,6 @@ const leerCSV = (texto) =>
     .filter(([cedula, horas]) => cedula && horas !== undefined && !isNaN(Number(horas)) && horas !== '')
     .map(([cedula, horas]) => ({ document: cedula, hours: Number(horas) }));
 
-const textoPeriodo = (p) => `${p.frequency} del ${p.start_date} al ${p.end_date}${p.status === 'cerrado' ? ' (cerrado)' : ''}`;
 
 function Horas() {
   const [periodos, setPeriodos] = useState([]);
@@ -18,8 +20,12 @@ function Horas() {
   const [filas, setFilas] = useState([]);
   const [cambios, setCambios] = useState({});
   const [archivo, setArchivo] = useState(null);
+  const [manual, setManual] = useState(null);
+  const [nuevoPeriodo, setNuevoPeriodo] = useState(false);
+  const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
+  const [confirmar, dialogo] = useConfirmar();
 
   const cargarHoras = async (id) => {
     if (!id) return;
@@ -31,10 +37,15 @@ function Horas() {
     }
   };
 
+  const cargarPeriodos = async () => {
+    const lista = await toProcess(34);
+    setPeriodos(lista);
+    return lista;
+  };
+
   useEffect(() => {
-    toProcess(34)
+    cargarPeriodos()
       .then((lista) => {
-        setPeriodos(lista);
         const primero = lista.find((p) => p.status === 'abierto' && p.frequency === 'semanal') || lista[0];
         if (primero) {
           setPeriodoId(primero.id);
@@ -51,13 +62,29 @@ function Horas() {
 
   const periodo = periodos.find((p) => p.id === Number(periodoId));
   const cerrado = periodo?.status === 'cerrado';
+  const conHoras = filas.filter((f) => f.hours !== null).length;
 
   const elegirPeriodo = (id) => {
     setPeriodoId(id);
     setArchivo(null);
+    setManual(null);
     cargarHoras(id);
   };
 
+  // --- nuevo periodo ---
+  const crearPeriodo = async (frecuencia, inicio, fin) => {
+    try {
+      const p = await toProcess(35, [frecuencia, inicio, fin]);
+      await cargarPeriodos();
+      setNuevoPeriodo(false);
+      elegirPeriodo(p.id);
+      avisar('Período creado. Ya puedes cargarle las horas');
+    } catch (e) {
+      setError(e.message + '. Revisa que no exista ya un período con esa frecuencia y esa fecha de inicio');
+    }
+  };
+
+  // --- carga por archivo ---
   const subirArchivo = async (ev) => {
     ev.preventDefault();
     if (!archivo) return;
@@ -82,6 +109,48 @@ function Horas() {
     }
   };
 
+  // --- carga a mano de todo el periodo ---
+  const abrirManual = () => {
+    setManual({});
+    setNuevoPeriodo(false);
+  };
+
+  const guardarManual = async (ev) => {
+    ev.preventDefault();
+    const entradas = Object.entries(manual).filter(([, v]) => v !== '');
+    if (entradas.length === 0) {
+      setError('Escribe las horas de al menos un empleado');
+      return;
+    }
+    if (entradas.some(([, v]) => Number(v) < 0)) {
+      setError('Las horas no pueden ser negativas');
+      return;
+    }
+    const reemplaza = entradas.filter(([id]) => filas.find((f) => f.id === Number(id))?.hours !== null).length;
+    if (reemplaza > 0) {
+      const ok = await confirmar({
+        titulo: 'Reemplazar horas',
+        texto: `${reemplaza === 1 ? 'Un empleado ya tiene' : `${reemplaza} empleados ya tienen`} horas en este período. Si sigues, se reemplazan por las que escribiste.`,
+        boton: 'Reemplazar',
+      });
+      if (!ok) return;
+    }
+    setGuardando(true);
+    try {
+      for (const [id, v] of entradas) {
+        await toProcess(38, [Number(periodoId), Number(id), Number(v)]);
+      }
+      avisar(`Horas cargadas a mano para ${entradas.length} ${entradas.length === 1 ? 'empleado' : 'empleados'}`);
+      setManual(null);
+      await cargarHoras(periodoId);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  // --- correccion de una fila ---
   const guardarFila = async (f) => {
     const horas = Number(cambios[f.id]);
     if (cambios[f.id] === '' || horas < 0) {
@@ -99,43 +168,113 @@ function Horas() {
 
   return (
     <div className="permisos">
+      {dialogo}
       <div className="permisos-encabezado">
         <div>
           <h2>Horas trabajadas</h2>
-          <p>Horas de los empleados que cobran por hora. Se cargan con un archivo y se corrigen a mano si hay un error</p>
+          <p>Horas de los empleados que cobran por hora en cada período. Se cargan con un archivo o a mano, y se corrigen si hay un error</p>
         </div>
+        <button
+          type="button"
+          className="boton-secundario"
+          onClick={() => { setNuevoPeriodo(!nuevoPeriodo); setManual(null); }}
+        >
+          {nuevoPeriodo ? 'Cancelar' : 'Nuevo período'}
+        </button>
       </div>
 
       {error && <p className="mensaje-error">{error}</p>}
       {mensaje && !error && <p className="mensaje">{mensaje}</p>}
 
+      {nuevoPeriodo && (
+        <FormPeriodo frecuenciaInicial="semanal" crear={crearPeriodo} alError={setError} />
+      )}
+
       <div className="permisos-filtros">
-        <label>
-          Período
-          <select value={periodoId} onChange={(e) => elegirPeriodo(e.target.value)}>
-            {periodos.map((p) => (
-              <option key={p.id} value={p.id}>{textoPeriodo(p)}</option>
-            ))}
-          </select>
-        </label>
-        {!cerrado && (
-          <form className="carga-archivo" onSubmit={subirArchivo}>
-            <label>
-              Archivo de horas (CSV: cedula,horas)
-              <input type="file" accept=".csv,.txt" onChange={(e) => setArchivo(e.target.files[0] || null)} />
-            </label>
-            <button type="submit" className="boton-principal" disabled={!archivo}>Cargar horas</button>
-          </form>
+        <SelectorPeriodo periodos={periodos} valor={periodoId} cambiar={elegirPeriodo} />
+        {!cerrado && periodo && (
+          <div className="cargas">
+            <form className="carga-archivo" onSubmit={subirArchivo}>
+              <label className="selector-archivo">
+                <input type="file" accept=".csv,.txt" onChange={(e) => setArchivo(e.target.files[0] || null)} />
+                <span className="boton-secundario">Elegir archivo</span>
+                <span className="nombre-archivo">{archivo ? archivo.name : 'CSV con cedula,horas'}</span>
+              </label>
+              <button type="submit" className="boton-secundario" disabled={!archivo}>Cargar archivo</button>
+            </form>
+            <span className="cargas-o">o</span>
+            <button type="button" className="boton-principal" onClick={abrirManual} disabled={!!manual || filas.length === 0}>
+              Cargar a mano
+            </button>
+          </div>
         )}
       </div>
 
       {cerrado && <p className="nota-form">Este período ya está cerrado: las horas quedan como se usaron en la nómina.</p>}
 
+      {manual && (
+        <form className="permisos-seccion carga-manual" onSubmit={guardarManual}>
+          <div className="permisos-titulo">
+            <h3>Cargar horas a mano</h3>
+            <span className="contador">{periodo && nombrePeriodo(periodo)}</span>
+          </div>
+          <p className="nota-form">
+            Escribe las horas que trabajó cada empleado en este período. Los que dejes en blanco no se tocan.
+          </p>
+          <div className="tabla-scroll">
+            <table className="tabla-permisos">
+              <thead>
+                <tr>
+                  <th>Cédula</th>
+                  <th>Nombre</th>
+                  <th className="numero">Tarifa</th>
+                  <th>Horas</th>
+                  <th className="numero">Sueldo del período</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filas.map((f) => (
+                  <tr key={f.id}>
+                    <td>{f.document}</td>
+                    <td>{f.first_name} {f.last_name}</td>
+                    <td className="numero">{bs(f.rate)}</td>
+                    <td>
+                      <input
+                        className="input-tabla input-horas"
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={manual[f.id] ?? ''}
+                        placeholder={f.hours !== null ? `Hoy: ${Number(f.hours)}` : 'Horas'}
+                        onChange={(e) => setManual({ ...manual, [f.id]: e.target.value })}
+                        aria-label={`Horas de ${f.first_name} ${f.last_name}`}
+                      />
+                    </td>
+                    <td className="numero">
+                      {manual[f.id] ? bs(Number(manual[f.id]) * Number(f.rate)) : <span className="tenue">-</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="form-acciones">
+            <button type="button" className="boton-secundario" onClick={() => setManual(null)}>Cancelar</button>
+            <button type="submit" className="boton-principal" disabled={guardando}>
+              {guardando ? 'Guardando...' : 'Guardar horas'}
+            </button>
+          </div>
+        </form>
+      )}
+
       <section className="permisos-seccion">
         <div className="permisos-titulo">
-          <h3>Empleados por hora ({periodo?.frequency})</h3>
-          <span className="contador">{filas.length}</span>
+          <h3>Horas del período</h3>
+          <span className="contador">{conHoras} de {filas.length} con horas</span>
         </div>
+        {!cerrado && filas.length > 0 && (
+          <p className="nota-form">Para corregir un error, cambia las horas del empleado y pulsa Guardar en su fila.</p>
+        )}
         <div className="tabla-scroll">
           <table className="tabla-permisos">
             <thead>
@@ -152,7 +291,7 @@ function Horas() {
             <tbody>
               {filas.map((f) => {
                 const valor = cambios[f.id] ?? (f.hours ?? '');
-                const editado = cambios[f.id] !== undefined;
+                const editado = cambios[f.id] !== undefined && cambios[f.id] !== String(f.hours ?? '');
                 return (
                   <tr key={f.id}>
                     <td>{f.document}</td>
@@ -168,15 +307,15 @@ function Horas() {
                         disabled={cerrado}
                         placeholder="Sin cargar"
                         onChange={(e) => setCambios({ ...cambios, [f.id]: e.target.value })}
-                        aria-label={`Horas de ${f.first_name} ${f.last_name}`}
+                        aria-label={`Corregir horas de ${f.first_name} ${f.last_name}`}
                       />
                     </td>
-                    <td>{f.source ? <span className="contador etiqueta">{f.source}</span> : <span className="tabla-vacia">Sin horas</span>}</td>
+                    <td>{f.source ? <span className="contador etiqueta">{f.source}</span> : <span className="tenue">Sin horas</span>}</td>
                     <td className="numero">{f.hours !== null ? bs(Number(f.hours) * Number(f.rate)) : ''}</td>
                     <td>
-                      {editado && !cerrado && (
+                      {!cerrado && (
                         <div className="agregar-perfil">
-                          <button type="button" onClick={() => guardarFila(f)}>Guardar</button>
+                          <button type="button" onClick={() => guardarFila(f)} disabled={!editado}>Guardar</button>
                         </div>
                       )}
                     </td>

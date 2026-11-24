@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import toProcess from './toProcess.js';
+import { useConfirmar } from './Confirmar.jsx';
+import SelectorPeriodo, { nombrePeriodo, fechas } from './SelectorPeriodo.jsx';
+import { fechaHora } from './formato.js';
+import FormPeriodo from './FormPeriodo.jsx';
 import Paginacion, { paginar, bs } from './Paginacion.jsx';
 
-const textoPeriodo = (p) => `${p.frequency} del ${p.start_date} al ${p.end_date}`;
 
 const POR_PAGINA = 4;
 
@@ -11,12 +14,12 @@ function Nomina() {
   const [periodoId, setPeriodoId] = useState('');
   const [nominas, setNominas] = useState([]);
   const [detalle, setDetalle] = useState(null);
-  const [nuevo, setNuevo] = useState({ frequency: 'quincenal', start: '', end: '' });
   const [mostrarForm, setMostrarForm] = useState(false);
   const [buscar, setBuscar] = useState('');
   const [pagina, setPagina] = useState(1);
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
+  const [confirmar, dialogo] = useConfirmar();
 
   const cargarPeriodos = async () => {
     try {
@@ -62,21 +65,11 @@ function Nomina() {
     cargarNominas(id);
   };
 
-  const crearPeriodo = async (ev) => {
-    ev.preventDefault();
-    if (!nuevo.start || !nuevo.end) {
-      setError('Elige la fecha de inicio y la de fin');
-      return;
-    }
-    if (nuevo.end < nuevo.start) {
-      setError('La fecha de fin no puede ser antes que la de inicio');
-      return;
-    }
+  const crearPeriodo = async (frecuencia, inicio, fin) => {
     try {
-      const p = await toProcess(35, [nuevo.frequency, nuevo.start, nuevo.end]);
+      const p = await toProcess(35, [frecuencia, inicio, fin]);
       avisar('Período creado');
       setMostrarForm(false);
-      setNuevo({ frequency: 'quincenal', start: '', end: '' });
       await cargarPeriodos();
       elegirPeriodo(p.id);
     } catch (e) {
@@ -111,7 +104,13 @@ function Nomina() {
   };
 
   const cerrar = async () => {
-    if (!window.confirm(`¿Cerrar la nómina ${textoPeriodo(periodo)}? Se calcula por última vez y después no se puede cambiar nada del período.`)) return;
+    const ok = await confirmar({
+      titulo: 'Cerrar la nómina',
+      texto: `Se va a calcular por última vez la nómina del período ${nombrePeriodo(periodo).toLowerCase()}. Después no se puede generar otra prenómina ni cambiar nada del período.`,
+      boton: 'Cerrar nómina',
+      peligro: true,
+    });
+    if (!ok) return;
     try {
       const r = await toProcess(41, [Number(periodoId)]);
       if (!r) {
@@ -139,6 +138,7 @@ function Nomina() {
 
   return (
     <div className="permisos">
+      {dialogo}
       <div className="permisos-encabezado">
         <div>
           <h2>Nómina</h2>
@@ -153,40 +153,11 @@ function Nomina() {
       {mensaje && !error && <p className="mensaje">{mensaje}</p>}
 
       {mostrarForm && (
-        <form className="form-usuario" onSubmit={crearPeriodo}>
-          <label>
-            Frecuencia
-            <select value={nuevo.frequency} onChange={(e) => setNuevo({ ...nuevo, frequency: e.target.value })}>
-              <option value="semanal">Semanal</option>
-              <option value="quincenal">Quincenal</option>
-              <option value="mensual">Mensual</option>
-            </select>
-          </label>
-          <label>
-            Desde
-            <input type="date" value={nuevo.start} onChange={(e) => setNuevo({ ...nuevo, start: e.target.value })} />
-          </label>
-          <label>
-            Hasta
-            <input type="date" value={nuevo.end} onChange={(e) => setNuevo({ ...nuevo, end: e.target.value })} />
-          </label>
-          <div className="form-acciones">
-            <button type="submit" className="boton-principal">Crear período</button>
-          </div>
-        </form>
+        <FormPeriodo frecuenciaInicial="quincenal" crear={crearPeriodo} alError={setError} />
       )}
 
       <div className="permisos-filtros">
-        <label>
-          Período
-          <select value={periodoId} onChange={(e) => elegirPeriodo(e.target.value)}>
-            {periodos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {textoPeriodo(p)}{p.status === 'cerrado' ? ' (cerrado)' : ''}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectorPeriodo periodos={periodos} valor={periodoId} cambiar={elegirPeriodo} />
         {periodo && (
           <div className="acciones-nomina">
             <span className={cerrado ? 'estado cerrado' : 'estado abierto'}>{cerrado ? 'Cerrado' : 'Abierto'}</span>
@@ -222,7 +193,7 @@ function Nomina() {
                 <tr key={n.id} className={detalle?.id === n.id ? 'seleccionada' : ''}>
                   <td>{n.version}</td>
                   <td>{n.type === 'nomina' ? <strong>Nómina</strong> : 'Prenómina'}</td>
-                  <td>{n.created_at}</td>
+                  <td>{fechaHora(n.created_at)}</td>
                   <td className="numero">{n.employees}</td>
                   <td className="numero">{bs(n.net)}</td>
                   <td>
@@ -244,7 +215,7 @@ function Nomina() {
         <section className="permisos-seccion">
           <div className="permisos-titulo">
             <h3>
-              Recibos de la {detalle.type === 'nomina' ? 'nómina' : `prenómina ${detalle.version}`} ({detalle.frequency} del {detalle.start_date} al {detalle.end_date})
+              Recibos de la {detalle.type === 'nomina' ? 'nómina' : `prenómina ${detalle.version}`} ({detalle.frequency}, {fechas(detalle.start_date, detalle.end_date)})
             </h3>
           </div>
 

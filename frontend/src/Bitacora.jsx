@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import toProcess from './toProcess.js';
 import Paginacion, { paginar } from './Paginacion.jsx';
 import { nombre } from './nombres.js';
+import { fechaHora } from './formato.js';
 
 const POR_PAGINA = 15;
 
@@ -87,7 +88,7 @@ function Bitacora() {
             <tbody>
               {visibles.map((f) => (
                 <tr key={f.id}>
-                  <td>{f.created_at}</td>
+                  <td>{fechaHora(f.created_at)}</td>
                   <td>{f.username}</td>
                   <td>{f.profile}</td>
                   <td>{f.method ? nombre(`${f.class}.${f.method}`) : 'Transacción eliminada'}</td>

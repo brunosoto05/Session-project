@@ -53,7 +53,7 @@ const nombres = {
   Hours: 'Horas trabajadas',
   'Hours.list': 'Ver horas',
   'Hours.load': 'Cargar archivo de horas',
-  'Hours.set': 'Corregir horas a mano',
+  'Hours.set': 'Cargar o corregir horas a mano',
   Payroll: 'Prenómina y nómina',
   'Payroll.list': 'Ver prenóminas y nóminas',
   'Payroll.generate': 'Generar prenómina',

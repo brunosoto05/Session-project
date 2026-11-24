@@ -146,12 +146,13 @@ JOIN person p ON p.document = a.document
 JOIN concept c ON c.description = a.concept
 ON CONFLICT (person_id, concept_id) DO NOTHING;
 
--- Periodos
+-- Periodos (la semana del 30 de noviembre queda sin horas, para cargarlas en la demostracion)
 INSERT INTO period (frequency, start_date, end_date) VALUES
     ('quincenal', '2026-11-01', '2026-11-15'),
     ('quincenal', '2026-11-16', '2026-11-30'),
     ('semanal', '2026-11-16', '2026-11-22'),
     ('semanal', '2026-11-23', '2026-11-29'),
+    ('semanal', '2026-11-30', '2026-12-06'),
     ('mensual', '2026-11-01', '2026-11-30')
 ON CONFLICT (frequency, start_date) DO NOTHING;
 

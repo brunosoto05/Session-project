@@ -120,22 +120,31 @@ deleteProfile: |
 
 # Los usa el objeto de seguridad en setPermissionMethod / setPermissionOption.
 # Reciben las partes del key: subsistema, clase, metodo (u opcion), perfil y el value
+# Al perfil admin no se le quitan los metodos sin los que ya no podria volver a dar
+# permisos: dar permiso a un metodo y los que usa la pantalla de permisos
 setPermissionMethod: |
   INSERT INTO permission_method (profile_id, method_id, value)
-  SELECT $4, m.id, $5
+  SELECT $4::int, m.id, $5::boolean
   FROM method m
   JOIN class c ON c.id = m.class_id
   JOIN subsystem s ON s.id = c.subsystem_id
   WHERE s.description = $1 AND c.description = $2 AND m.description = $3
+    AND ($5::boolean
+         OR NOT EXISTS (SELECT 1 FROM profile WHERE id = $4::int AND name = 'admin')
+         OR s.description <> 'security'
+         OR (c.description, m.description) NOT IN (('Permission', 'grantMethod'), ('Permission', 'list'),
+                                                   ('Profile', 'list'), ('Subsystem', 'list'), ('Class', 'list')))
   ON CONFLICT (profile_id, method_id) DO UPDATE SET value = EXCLUDED.value
   RETURNING profile_id, method_id, value
 
+# Al perfil admin no se le quitan opciones del menu (se quedaria sin poder volver a ponerlas)
 setPermissionOption: |
   INSERT INTO permission_option (profile_id, option_id, value)
-  SELECT $3, o.id, $4
+  SELECT $3::int, o.id, $4::boolean
   FROM option o
   JOIN subsystem s ON s.id = o.subsystem_id
   WHERE s.description = $1 AND o.description = $2
+    AND ($4::boolean OR NOT EXISTS (SELECT 1 FROM profile WHERE id = $3::int AND name = 'admin'))
   ON CONFLICT (profile_id, option_id) DO UPDATE SET value = EXCLUDED.value
   RETURNING profile_id, option_id, value
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import toProcess from './toProcess.js';
 import Paginacion, { paginar, bs } from './Paginacion.jsx';
+import { fecha } from './formato.js';
 
 const vacio = {
   document: '',
@@ -231,7 +232,7 @@ function Empleados() {
                   </td>
                   <td>{e.document}</td>
                   <td>{e.first_name} {e.last_name}</td>
-                  <td>{e.hire_date}</td>
+                  <td>{fecha(e.hire_date)}</td>
                   <td className="capital">{e.frequency}</td>
                   <td>{e.pay_type === 'fijo' ? 'Fijo' : 'Por hora'}</td>
                   <td className="numero">{bs(e.amount)}{e.pay_type === 'hora' && ' /h'}</td>

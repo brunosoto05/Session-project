@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import toProcess from './toProcess.js';
+import { useConfirmar } from './Confirmar.jsx';
 
 function Perfiles() {
   const [perfiles, setPerfiles] = useState([]);
@@ -8,6 +9,7 @@ function Perfiles() {
   const [nombre, setNombre] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
+  const [confirmar, dialogo] = useConfirmar();
 
   const cargarPerfiles = async () => {
     try {
@@ -67,7 +69,13 @@ function Perfiles() {
   };
 
   const borrarPerfil = async (p) => {
-    if (!window.confirm(`¿Borrar el perfil ${p.name}? También se borran sus permisos.`)) return;
+    const ok = await confirmar({
+      titulo: 'Borrar perfil',
+      texto: `¿Borrar el perfil ${p.name}? También se borran sus permisos.`,
+      boton: 'Borrar',
+      peligro: true,
+    });
+    if (!ok) return;
     try {
       const perfil = await toProcess(21, [p.id]);
       if (!perfil) {
@@ -83,6 +91,7 @@ function Perfiles() {
 
   return (
     <div className="permisos">
+      {dialogo}
       <div className="permisos-encabezado">
         <div>
           <h2>Perfiles</h2>
