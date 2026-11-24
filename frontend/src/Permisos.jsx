@@ -1,37 +1,7 @@
 import { useState, useEffect } from 'react';
 import toProcess from './toProcess.js';
+import { nombre } from './nombres.js';
 
-const nombres = {
-  security: 'Seguridad',
-  User: 'Usuarios',
-  'User.create': 'Crear usuarios',
-  'User.setActive': 'Activar o bloquear usuarios',
-  'User.addProfile': 'Asignar perfiles a usuarios',
-  'User.list': 'Ver usuarios',
-  Profile: 'Perfiles',
-  'Profile.create': 'Crear perfiles',
-  'Profile.list': 'Ver perfiles',
-  Permission: 'Permisos',
-  'Permission.grantMethod': 'Cambiar permisos de acciones',
-  'Permission.grantOption': 'Cambiar permisos del menú',
-  'Permission.list': 'Ver permisos',
-  'Permission.grantClass': 'Cambiar permisos de una clase completa',
-  Subsystem: 'Subsistemas',
-  'Subsystem.create': 'Crear subsistemas',
-  'Subsystem.list': 'Ver subsistemas',
-  Option: 'Opciones del menú',
-  'Option.create': 'Crear opciones',
-  'Option.delete': 'Eliminar opciones',
-  Class: 'Clases',
-  'Class.create': 'Crear clases',
-  'Class.delete': 'Eliminar clases',
-  'Class.list': 'Ver clases',
-  Method: 'Métodos',
-  'Method.create': 'Crear métodos',
-  'Method.delete': 'Eliminar métodos',
-};
-
-const nombre = (clave) => nombres[clave] || clave;
 
 const POR_PAGINA = 5;
 

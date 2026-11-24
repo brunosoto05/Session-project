@@ -3,15 +3,28 @@ import './App.css';
 import Permisos from './Permisos.jsx';
 import Usuarios from './Usuarios.jsx';
 import Perfiles from './Perfiles.jsx';
+import Empleados from './Empleados.jsx';
+import Conceptos from './Conceptos.jsx';
+import Horas from './Horas.jsx';
+import Nomina from './Nomina.jsx';
+import Bitacora from './Bitacora.jsx';
 
 const subsistemas = {
   security: 'Seguridad',
+  payroll: 'Nómina',
 };
+
+const pantallas = ['Empleados', 'Conceptos', 'Horas', 'Nómina', 'Usuarios', 'Perfiles', 'Permisos', 'Bitácora'];
 
 const descripciones = {
   Usuarios: 'Crear usuarios, bloquearlos y asignarles perfiles',
   Perfiles: 'Crear, cambiar de nombre y borrar perfiles',
   Permisos: 'Qué puede hacer cada perfil',
+  'Bitácora': 'Quién hizo qué en el sistema',
+  Empleados: 'Registrar empleados, su forma de pago y su sueldo',
+  Conceptos: 'Asignaciones y deducciones de la nómina',
+  Horas: 'Cargar y corregir las horas trabajadas',
+  'Nómina': 'Generar prenóminas, cerrar la nómina y ver recibos',
 };
 
 function App() {
@@ -186,7 +199,10 @@ useEffect(() => {
 
   const perfilActual = perfilesUsuario.find((p) => p.id === sesion.profile)?.name;
   const hoy = new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const grupos = [...new Set(modulos.map((m) => m.subsystem))];
+  // el menu sigue el orden del proceso (empleados, conceptos, horas, nomina)
+  const orden = (m) => (pantallas.includes(m.option) ? pantallas.indexOf(m.option) : pantallas.length);
+  const menu = [...modulos].sort((a, b) => orden(a) - orden(b));
+  const grupos = [...new Set(menu.map((m) => m.subsystem))];
   const puedeVer = (opcion) => modulos.some((m) => m.option === opcion);
 
   return (
@@ -219,7 +235,7 @@ useEffect(() => {
           {grupos.map((g) => (
             <div key={g} className="lateral-grupo">
               <span className="lateral-titulo">{subsistemas[g] || g}</span>
-              {modulos.filter((m) => m.subsystem === g).map((m) => (
+              {menu.filter((m) => m.subsystem === g).map((m) => (
                 <button
                   key={m.option}
                   className={pantalla === m.option ? 'lateral-item activo' : 'lateral-item'}
@@ -249,7 +265,7 @@ useEffect(() => {
                 <p className="inicio-sub">Tu perfil todavía no tiene opciones asignadas. Pídele al administrador que te dé acceso.</p>
               ) : (
                 <div className="accesos">
-                  {modulos.map((m) => (
+                  {menu.map((m) => (
                     <button key={m.option} className="acceso" onClick={() => setPantalla(m.option)}>
                       <span className="acceso-grupo">{subsistemas[m.subsystem] || m.subsystem}</span>
                       <strong>{m.option}</strong>
@@ -273,7 +289,27 @@ useEffect(() => {
             <Perfiles />
           )}
 
-          {pantalla !== '' && !['Permisos', 'Usuarios', 'Perfiles'].includes(pantalla) && (
+          {pantalla === 'Bitácora' && puedeVer('Bitácora') && (
+            <Bitacora />
+          )}
+
+          {pantalla === 'Empleados' && puedeVer('Empleados') && (
+            <Empleados />
+          )}
+
+          {pantalla === 'Conceptos' && puedeVer('Conceptos') && (
+            <Conceptos />
+          )}
+
+          {pantalla === 'Horas' && puedeVer('Horas') && (
+            <Horas />
+          )}
+
+          {pantalla === 'Nómina' && puedeVer('Nómina') && (
+            <Nomina />
+          )}
+
+          {pantalla !== '' && !pantallas.includes(pantalla) && (
             <section className="permisos">
               <div className="permisos-encabezado">
                 <div>

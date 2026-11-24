@@ -6,6 +6,7 @@ import pool from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
 import protectedRoutes from './routes/protected.routes.js';
 import sec from './security/Security.js';
+import db from './db/DBComponent.js';
 import { sessionExist } from './services/session.service.js';
 
 const pgSession = connectPgSimple(session);
@@ -68,6 +69,8 @@ app.post('/toProcess', async (req, res) => {
       Method: tx.method,
       params: req.body.params ?? [],
     });
+    // bitacora: quien ejecuto que transaccion
+    await db.exe('insertLog', [req.session.userData.userID, profile, Number(req.body.tx)]);
     res.json(resp);
   } catch (err) {
     console.error(err);

@@ -218,3 +218,284 @@ getOptionsBySubsystem: |
   LEFT JOIN permission_option po ON po.option_id = o.id AND po.profile_id = $2
   WHERE s.id = $1
   ORDER BY o.description
+
+# --- Nomina: empleados ---
+# Un empleado es una persona con el tipo Empleado; sus datos laborales van en
+# person_person_type y el sueldo vigente es la fila de remuneration sin valid_to
+
+getEmployees: |
+  SELECT p.id, p.document, p.first_name, p.last_name,
+         to_char(ppt.hire_date, 'YYYY-MM-DD') AS hire_date,
+         ppt.frequency, ppt.active, r.pay_type, r.amount
+  FROM person p
+  JOIN person_person_type ppt ON ppt.person_id = p.id
+  JOIN person_type pt ON pt.id = ppt.person_type_id AND pt.description = 'Empleado'
+  LEFT JOIN remuneration r ON r.person_id = p.id AND r.valid_to IS NULL
+  ORDER BY p.last_name, p.first_name
+
+# Si la persona ya existe (por ejemplo, porque tiene usuario) se usa la misma
+createEmployee: |
+  WITH per AS (
+    INSERT INTO person (document, first_name, last_name)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (document) DO UPDATE SET first_name = EXCLUDED.first_name,
+                                         last_name = EXCLUDED.last_name
+    RETURNING id
+  ), typ AS (
+    INSERT INTO person_person_type (person_id, person_type_id, hire_date, frequency)
+    SELECT per.id, pt.id, $4::date, $5
+    FROM per, person_type pt
+    WHERE pt.description = 'Empleado'
+    RETURNING person_id
+  ), rem AS (
+    INSERT INTO remuneration (person_id, pay_type, amount, valid_from)
+    SELECT person_id, $6, $7, $4::date FROM typ
+  )
+  SELECT person_id AS id FROM typ
+
+# Si cambia el sueldo se cierra la fila vigente y se abre otra (historial)
+updateEmployee: |
+  WITH upd AS (
+    UPDATE person_person_type SET hire_date = $2, frequency = $3
+    WHERE person_id = $1
+      AND person_type_id = (SELECT id FROM person_type WHERE description = 'Empleado')
+    RETURNING person_id
+  ), cur AS (
+    SELECT id, pay_type, amount FROM remuneration
+    WHERE person_id = $1 AND valid_to IS NULL
+  ), changed AS (
+    SELECT 1 AS yes
+    WHERE EXISTS (SELECT 1 FROM upd)
+      AND NOT EXISTS (SELECT 1 FROM cur WHERE pay_type = $4 AND amount = $5::numeric)
+  ), old AS (
+    UPDATE remuneration SET valid_to = CURRENT_DATE
+    WHERE id IN (SELECT id FROM cur) AND EXISTS (SELECT 1 FROM changed)
+  ), rem AS (
+    INSERT INTO remuneration (person_id, pay_type, amount)
+    SELECT $1, $4, $5::numeric FROM changed
+  )
+  SELECT person_id AS id FROM upd
+
+setEmployeeActive: |
+  UPDATE person_person_type SET active = $2
+  WHERE person_id = $1
+    AND person_type_id = (SELECT id FROM person_type WHERE description = 'Empleado')
+  RETURNING person_id AS id, active
+
+# --- Nomina: conceptos ---
+
+getConceptTypes: |
+  SELECT id, description FROM concept_type
+  ORDER BY description
+
+createConceptType: |
+  INSERT INTO concept_type (description) VALUES ($1)
+  RETURNING id, description
+
+# Cada concepto con las personas a las que se le asigno (si no es para todos)
+getConcepts: |
+  SELECT c.id, c.concept_type_id, ct.description AS type, c.description, c.sign,
+         c.calc_mode, c.value, c.applies_to_all, c.active,
+         COALESCE((
+           SELECT json_agg(json_build_object('id', p.id,
+                                             'name', p.first_name || ' ' || p.last_name,
+                                             'value', pc.value)
+                           ORDER BY p.last_name)
+           FROM person_concept pc
+           JOIN person p ON p.id = pc.person_id
+           WHERE pc.concept_id = c.id
+         ), '[]') AS persons
+  FROM concept c
+  JOIN concept_type ct ON ct.id = c.concept_type_id
+  ORDER BY c.sign = '-', c.calc_mode <> 'sueldo', ct.description, c.description
+
+createConcept: |
+  INSERT INTO concept (concept_type_id, description, sign, calc_mode, value, applies_to_all)
+  VALUES ($1, $2, $3, $4, $5, $6)
+  RETURNING id, description
+
+updateConcept: |
+  UPDATE concept
+  SET concept_type_id = $2, description = $3, sign = $4, calc_mode = $5,
+      value = $6, applies_to_all = $7, active = $8
+  WHERE id = $1
+  RETURNING id, description
+
+# Solo se borra si no salio en ninguna nomina; si salio, se desactiva
+deleteConcept: |
+  WITH con AS (
+    SELECT id FROM concept
+    WHERE id = $1 AND NOT EXISTS (SELECT 1 FROM payroll_detail WHERE concept_id = $1)
+  ), pc AS (
+    DELETE FROM person_concept WHERE concept_id IN (SELECT id FROM con)
+  )
+  DELETE FROM concept WHERE id IN (SELECT id FROM con)
+  RETURNING id, description
+
+assignConcept: |
+  INSERT INTO person_concept (concept_id, person_id, value)
+  VALUES ($1, $2, $3)
+  ON CONFLICT (person_id, concept_id) DO UPDATE SET value = EXCLUDED.value
+  RETURNING concept_id, person_id, value
+
+unassignConcept: |
+  DELETE FROM person_concept
+  WHERE concept_id = $1 AND person_id = $2
+  RETURNING concept_id, person_id
+
+# --- Nomina: periodos y horas ---
+
+getPeriods: |
+  SELECT pe.id, pe.frequency,
+         to_char(pe.start_date, 'YYYY-MM-DD') AS start_date,
+         to_char(pe.end_date, 'YYYY-MM-DD') AS end_date,
+         pe.status,
+         (SELECT COUNT(*)::int FROM payroll py
+          WHERE py.period_id = pe.id AND py.type = 'prenomina') AS prenominas
+  FROM period pe
+  ORDER BY pe.start_date DESC, pe.frequency
+
+getPeriod: |
+  SELECT id, frequency, status,
+         to_char(start_date, 'YYYY-MM-DD') AS start_date,
+         to_char(end_date, 'YYYY-MM-DD') AS end_date
+  FROM period WHERE id = $1
+
+createPeriod: |
+  INSERT INTO period (frequency, start_date, end_date)
+  VALUES ($1, $2, $3)
+  RETURNING id
+
+# Empleados por hora activos de la frecuencia del periodo, con sus horas
+getHours: |
+  SELECT p.id, p.document, p.first_name, p.last_name, r.amount AS rate,
+         wh.hours, wh.source
+  FROM period pe
+  JOIN person_person_type ppt ON ppt.frequency = pe.frequency AND ppt.active
+  JOIN person_type pt ON pt.id = ppt.person_type_id AND pt.description = 'Empleado'
+  JOIN person p ON p.id = ppt.person_id
+  JOIN remuneration r ON r.person_id = p.id AND r.valid_to IS NULL AND r.pay_type = 'hora'
+  LEFT JOIN worked_hours wh ON wh.person_id = p.id AND wh.period_id = pe.id
+  WHERE pe.id = $1
+  ORDER BY p.last_name, p.first_name
+
+# $3 es el archivo ya leido: [{ "document": "...", "hours": 40 }, ...]
+# Solo entra si el periodo esta abierto; las cedulas que no existen se ignoran
+loadHours: |
+  WITH pe AS (
+    SELECT id FROM period WHERE id = $1 AND status = 'abierto'
+  ), ld AS (
+    INSERT INTO hours_load (period_id, file_name)
+    SELECT id, $2 FROM pe
+    RETURNING id, period_id
+  ), rows AS (
+    SELECT r.document, r.hours
+    FROM jsonb_to_recordset($3::jsonb) AS r(document text, hours numeric)
+  ), ins AS (
+    INSERT INTO worked_hours (person_id, period_id, hours, source, load_id)
+    SELECT p.id, ld.period_id, rows.hours, 'importado', ld.id
+    FROM rows
+    JOIN person p ON p.document = rows.document
+    CROSS JOIN ld
+    ON CONFLICT (person_id, period_id) DO UPDATE
+      SET hours = EXCLUDED.hours, source = 'importado', load_id = EXCLUDED.load_id
+    RETURNING person_id
+  )
+  SELECT (SELECT id FROM ld) AS load_id,
+         (SELECT COUNT(*)::int FROM ins) AS loaded,
+         (SELECT COUNT(*)::int FROM rows) AS total
+
+# Correccion a mano de las horas de un empleado
+setHours: |
+  INSERT INTO worked_hours (person_id, period_id, hours, source)
+  SELECT $2, id, $3, 'manual' FROM period WHERE id = $1 AND status = 'abierto'
+  ON CONFLICT (person_id, period_id) DO UPDATE
+    SET hours = EXCLUDED.hours, source = 'manual', load_id = NULL
+  RETURNING person_id, hours
+
+# --- Nomina: prenomina y nomina ---
+
+getPayrolls: |
+  SELECT py.id, py.type, py.version,
+         to_char(py.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
+         COUNT(DISTINCT d.person_id)::int AS employees,
+         COALESCE(SUM(CASE WHEN c.sign = '+' THEN d.amount ELSE -d.amount END), 0) AS net
+  FROM payroll py
+  LEFT JOIN payroll_detail d ON d.payroll_id = py.id
+  LEFT JOIN concept c ON c.id = d.concept_id
+  WHERE py.period_id = $1
+  GROUP BY py.id
+  ORDER BY py.version DESC
+
+# Lo que hace falta para calcular: empleados activos de la frecuencia del
+# periodo con su sueldo vigente y sus horas
+getPayrollEmployees: |
+  SELECT p.id AS person_id, r.pay_type, r.amount, COALESCE(wh.hours, 0) AS hours
+  FROM period pe
+  JOIN person_person_type ppt ON ppt.frequency = pe.frequency AND ppt.active
+  JOIN person_type pt ON pt.id = ppt.person_type_id AND pt.description = 'Empleado'
+  JOIN person p ON p.id = ppt.person_id
+  JOIN remuneration r ON r.person_id = p.id AND r.valid_to IS NULL
+  LEFT JOIN worked_hours wh ON wh.person_id = p.id AND wh.period_id = pe.id
+  WHERE pe.id = $1
+
+getActiveConcepts: |
+  SELECT id, sign, calc_mode, value, applies_to_all
+  FROM concept WHERE active
+
+getPersonConcepts: |
+  SELECT person_id, concept_id, value FROM person_concept
+
+# Guarda la prenomina o la nomina con su detalle (arreglos del mismo largo).
+# La version es la siguiente del periodo; si es la nomina, cierra el periodo
+insertPayroll: |
+  WITH py AS (
+    INSERT INTO payroll (period_id, type, version)
+    SELECT $1::int, $2::text, COALESCE(MAX(version), 0) + 1
+    FROM payroll WHERE period_id = $1::int
+    RETURNING id, version
+  ), det AS (
+    INSERT INTO payroll_detail (payroll_id, person_id, concept_id, amount)
+    SELECT py.id, d.person_id, d.concept_id, d.amount
+    FROM py, unnest($3::int[], $4::int[], $5::numeric[]) AS d(person_id, concept_id, amount)
+  ), cl AS (
+    UPDATE period SET status = 'cerrado' WHERE id = $1::int AND $2::text = 'nomina'
+  )
+  SELECT id, version FROM py
+
+getPayroll: |
+  SELECT py.id, py.type, py.version,
+         to_char(py.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
+         pe.frequency, to_char(pe.start_date, 'YYYY-MM-DD') AS start_date,
+         to_char(pe.end_date, 'YYYY-MM-DD') AS end_date
+  FROM payroll py
+  JOIN period pe ON pe.id = py.period_id
+  WHERE py.id = $1
+
+getPayrollDetail: |
+  SELECT d.person_id, p.document, p.first_name, p.last_name,
+         c.description AS concept, ct.description AS type, c.sign, d.amount
+  FROM payroll_detail d
+  JOIN person p ON p.id = d.person_id
+  JOIN concept c ON c.id = d.concept_id
+  JOIN concept_type ct ON ct.id = c.concept_type_id
+  WHERE d.payroll_id = $1
+  ORDER BY p.last_name, p.first_name, c.sign = '-', c.calc_mode <> 'sueldo', ct.description, c.description
+
+# --- Bitacora ---
+
+insertLog: |
+  INSERT INTO log (user_id, profile_id, tx) VALUES ($1, $2, $3)
+
+getLog: |
+  SELECT l.id, to_char(l.created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at,
+         u.username, pr.name AS profile, l.tx,
+         s.description AS subsystem, c.description AS class, m.description AS method
+  FROM log l
+  JOIN "user" u ON u.id = l.user_id
+  JOIN profile pr ON pr.id = l.profile_id
+  LEFT JOIN method m ON m.tx = l.tx
+  LEFT JOIN class c ON c.id = m.class_id
+  LEFT JOIN subsystem s ON s.id = c.subsystem_id
+  ORDER BY l.id DESC
+  LIMIT 500

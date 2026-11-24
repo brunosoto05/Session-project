@@ -834,3 +834,320 @@ select {
     min-height: 44px;
   }
 }
+
+/* Pantallas de la nomina */
+.permisos-filtros > label,
+.carga-archivo label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-texto-suave);
+}
+
+.permisos-filtros > label input,
+.permisos-filtros > label select,
+.form-usuario select {
+  min-width: 180px;
+  padding: 8px 10px;
+  font-size: 15px;
+  color: var(--color-texto);
+  background-color: white;
+  border: 1px solid var(--color-borde);
+  border-radius: 6px;
+}
+
+.form-usuario input:disabled {
+  color: var(--color-texto-suave);
+  background-color: var(--color-fondo);
+}
+
+.nota-form {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-texto-suave);
+}
+
+.tabla-permisos .numero,
+.recibo .numero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.capital {
+  text-transform: capitalize;
+}
+
+.tabla-permisos tr.inactivo td {
+  color: var(--color-texto-suave);
+}
+
+.tabla-permisos tr.seleccionada td {
+  background-color: var(--color-principal-suave);
+}
+
+.signo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-weight: 700;
+  border-radius: 50%;
+}
+
+.signo.mas {
+  color: #166534;
+  background-color: #dcfce7;
+}
+
+.signo.menos {
+  color: #991b1b;
+  background-color: #fee2e2;
+}
+
+.fila-detalle td {
+  background-color: var(--color-principal-suave);
+}
+
+.asignados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.asignado {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 10px;
+  font-size: 13px;
+  background-color: white;
+  border: 1px solid var(--color-borde);
+  border-radius: 999px;
+}
+
+.asignado button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  line-height: 1;
+  color: var(--color-texto-suave);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.asignado button:hover {
+  color: #991b1b;
+  background-color: #fee2e2;
+}
+
+.nuevo-tipo {
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.nuevo-tipo input,
+.fila-detalle input {
+  padding: 4px 8px;
+  min-width: 200px;
+}
+
+.carga-archivo {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.carga-archivo input[type='file'] {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-texto);
+}
+
+.boton-principal:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.input-horas {
+  width: 90px;
+}
+
+.acciones-nomina {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.boton-secundario {
+  padding: 8px 16px;
+  font-size: 15px;
+  color: var(--color-principal);
+  background-color: white;
+  border: 1px solid var(--color-principal);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.boton-secundario:hover {
+  background-color: var(--color-principal-suave);
+}
+
+.estado {
+  align-self: center;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.estado.abierto {
+  color: #166534;
+  background-color: #dcfce7;
+}
+
+.estado.cerrado {
+  color: var(--color-texto-suave);
+  background-color: var(--color-borde-suave);
+}
+
+.resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.resumen div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  background-color: var(--color-tarjeta);
+  border: 1px solid var(--color-borde-suave);
+  border-radius: 8px;
+}
+
+.resumen span {
+  font-size: 13px;
+  color: var(--color-texto-suave);
+}
+
+.resumen strong {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-principal);
+}
+
+.recibos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.recibo {
+  padding: 14px 16px;
+  background-color: var(--color-tarjeta);
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+}
+
+.recibo header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding-bottom: 8px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--color-borde-suave);
+}
+
+.recibo header span {
+  font-size: 13px;
+  color: var(--color-texto-suave);
+}
+
+.recibo table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.recibo th {
+  padding: 4px 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--color-texto-suave);
+}
+
+.recibo td {
+  padding: 3px 0;
+}
+
+.recibo tfoot td {
+  padding-top: 6px;
+  font-weight: 600;
+  border-top: 1px solid var(--color-borde-suave);
+}
+
+.recibo tfoot .neto td {
+  font-size: 15px;
+  color: var(--color-principal);
+  border-top: none;
+}
+
+@media (max-width: 700px) {
+  .carga-archivo,
+  .acciones-nomina,
+  .nuevo-tipo {
+    margin-left: 0;
+  }
+
+  .recibos {
+    grid-template-columns: 1fr;
+  }
+}
+
+.permisos-filtros > .filtro-check {
+  flex-direction: row;
+  align-items: center;
+  align-self: flex-end;
+  padding: 8px 12px;
+}
+
+.permisos-filtros > label {
+  max-width: 100%;
+}
+
+.permisos-filtros > label input,
+.permisos-filtros > label select {
+  max-width: 100%;
+}
+
+@media (max-width: 700px) {
+  .permisos-filtros > label,
+  .carga-archivo {
+    width: 100%;
+  }
+
+  .carga-archivo {
+    flex-wrap: wrap;
+  }
+
+  .permisos-filtros > label input:not([type='checkbox']),
+  .permisos-filtros > label select {
+    min-width: 0;
+    width: 100%;
+  }
+}
